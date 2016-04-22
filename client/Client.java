@@ -1,6 +1,6 @@
 package client;
-
-import java.awt.Container;
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
@@ -8,29 +8,54 @@ import java.net.UnknownHostException;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
-import server.*;
+import server.VideoFile;
+import javax.swing.JComboBox;
+import java.awt.FlowLayout;
 
-public class Client extends JFrame{
-
+public class Client extends JFrame {
+	
 	private List<VideoFile> videoList;
 	private Socket serverSocket;
 	private ObjectInputStream inputFromServer;
 	private int port = 1238;
 	private String host = "127.0.0.1";
 	
-	
-	public Client(){
-		setupGUI();
+	private JPanel contentPane;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					Client frame = new Client();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public Client() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 917, 664);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(new BorderLayout(0, 0));
+		
+		JComboBox comboBox = new JComboBox();
+		contentPane.add(comboBox, BorderLayout.EAST);
 	}
 	
-	public void setupGUI(){
-		setTitle("SuperFlix");
-		setSize(600,400);
-		setVisible(true);
-		
-		
-	}
 	public void connectToTheServer() {
 		 connectToTheServer(this.host, this.port);
 	}
@@ -87,4 +112,5 @@ public class Client extends JFrame{
 	public void setVideoList(List<VideoFile> videoList) {
 		this.videoList = videoList;
 	}
+
 }
