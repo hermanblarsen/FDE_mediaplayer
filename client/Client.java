@@ -1,24 +1,40 @@
 package client;
 
+import java.awt.Container;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import javax.swing.JFrame;
+
 import server.*;
 
-public class Client {
+public class Client extends JFrame{
 
 	private List<VideoFile> videoList;
 	private Socket serverSocket;
 	private ObjectInputStream inputFromServer;
 	private int port = 1238;
 	private String host = "127.0.0.1";
-
+	
+	
+	public Client(){
+		setupGUI();
+	}
+	
+	public void setupGUI(){
+		setTitle("SuperFlix");
+		setSize(600,400);
+		setVisible(true);
+		
+		
+	}
 	public void connectToTheServer() {
 		 connectToTheServer(this.host, this.port);
 	}
+	
 	public void connectToTheServer(String host,int port) {
 		System.out.println("Trying to connect to " + host + ":" + port);
 		try {
