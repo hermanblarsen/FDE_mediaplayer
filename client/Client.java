@@ -14,6 +14,14 @@ import javax.swing.border.EmptyBorder;
 import server.VideoFile;
 import javax.swing.JComboBox;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.JTabbedPane;
+import javax.swing.BoxLayout;
+import javax.swing.JSplitPane;
 
 public class Client extends JFrame {
 	
@@ -24,6 +32,7 @@ public class Client extends JFrame {
 	private String host = "127.0.0.1";
 	
 	private JPanel contentPane;
+	protected JComboBox<String> selectionBox;
 
 	/**
 	 * Launch the application.
@@ -46,14 +55,41 @@ public class Client extends JFrame {
 	 */
 	public Client() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 917, 664);
+		setBounds(100, 100, 653, 485);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
-		JComboBox comboBox = new JComboBox();
-		contentPane.add(comboBox, BorderLayout.EAST);
+		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		tabbedPane.setToolTipText("Choose which tab to display");
+		
+		JPanel listViewPanel = new JPanel();
+		tabbedPane.addTab("New tab", null, listViewPanel, null);
+		listViewPanel.setLayout(null);
+		
+		selectionBox = new JComboBox<String>();
+		selectionBox.setBounds(46, 78, 362, 24);
+		selectionBox.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JComboBox<String> combobox = (JComboBox)e.getSource();
+				String selectedTitle = (String)combobox.getSelectedItem();
+				System.out.println("selected Title: " + selectedTitle);
+				
+			}
+		});
+		listViewPanel.add(selectionBox);
+		selectionBox.setVisible(true);
+		
+		JPanel videoPlayerPanel = new JPanel();
+		tabbedPane.addTab("Video Player", null, videoPlayerPanel, null);
+		contentPane.add(tabbedPane);
+		
+		JPanel settingsPanel = new JPanel();
+		settingsPanel.setToolTipText("");
+		tabbedPane.addTab("Settings", null, settingsPanel, null);
 	}
 	
 	public void connectToTheServer() {
@@ -61,7 +97,7 @@ public class Client extends JFrame {
 	}
 	
 	public void connectToTheServer(String host,int port) {
-		System.out.println("Trying to connect to " + host + ":" + port);
+		System.out.println("Trying to connect to " + host + ":" + port + ".");
 		try {
 			this.serverSocket = new Socket(host,port);
 			System.out.println("Successfully connected to " + host + ":" + port);
@@ -81,6 +117,7 @@ public class Client extends JFrame {
 			inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			try {
 				videoList = (List<VideoFile>)inputFromServer.readObject();
+				
 			} catch (ClassCastException e) {
 				System.out.println("ClassCastException thingy");
 				e.printStackTrace();
@@ -93,8 +130,18 @@ public class Client extends JFrame {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		updateClientWindow();
 	}
 	
+	private void updateClientWindow() {
+		//
+		for ( VideoFile video : videoList){
+			selectionBox.addItem(video.getTitle());
+		}
+		this.validate();
+		selectionBox.validate();
+	}
+
 	public void closeSockets(){
 		try {
 			this.serverSocket.close();

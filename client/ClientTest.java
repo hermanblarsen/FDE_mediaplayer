@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import javax.swing.JComboBox;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,5 +35,12 @@ public class ClientTest {
 		assertEquals("20120213a2", videoFile0.getID());
 		assertEquals("Monsters Inc.", videoFile0.getTitle());
 		assertEquals("monstersinc_high.mpg", videoFile0.getFilename());
+	}
+	
+	@Test
+	public void checkSelectedVideoInList() {
+		JComboBox comboBox = client.selectionBox;
+		comboBox.setSelectedIndex(2);
+		assertEquals("Prometheus", comboBox.getSelectedItem());
 	}
 }
