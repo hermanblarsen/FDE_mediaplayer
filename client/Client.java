@@ -22,6 +22,8 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.JTabbedPane;
 import javax.swing.BoxLayout;
 import javax.swing.JSplitPane;
+import javax.swing.JOptionPane;
+import javax.swing.*;
 
 public class Client extends JFrame {
 	
@@ -54,58 +56,79 @@ public class Client extends JFrame {
 	 * Create the frame.
 	 */
 	public Client() {
+		setupGUI();
+	}
+	
+	private void setupGUI() {
+		//Setup a JFrame and a JPanel contentsPane
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 653, 485);
+		setBounds(100, 100, 600, 400);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
+		//Creates a tabbed pane, where later JPanels can be added and hence sectioned into tabs
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		tabbedPane.setToolTipText("Choose which tab to display");
 		
-		JPanel listViewPanel = new JPanel();
-		tabbedPane.addTab("New tab", null, listViewPanel, null);
-		listViewPanel.setLayout(null);
+		JPanel listViewTab = new JPanel();
+		tabbedPane.addTab("Video List", null, listViewTab, "Browse videos to watch");
+		listViewTab.setLayout(null);
 		
 		selectionBox = new JComboBox<String>();
-		selectionBox.setBounds(46, 78, 362, 24);
+		selectionBox.setBounds(40, 80, 360, 30);
 		selectionBox.addActionListener(new ActionListener() {
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				JComboBox<String> combobox = (JComboBox)e.getSource();
 				String selectedTitle = (String)combobox.getSelectedItem();
-				System.out.println("selected Title: " + selectedTitle);
-				
 			}
 		});
-		listViewPanel.add(selectionBox);
-		selectionBox.setVisible(true);
-		
-		JPanel videoPlayerPanel = new JPanel();
-		tabbedPane.addTab("Video Player", null, videoPlayerPanel, null);
+		listViewTab.add(selectionBox);
+	
+		JPanel videoPlayerTab = new JPanel();
+		tabbedPane.addTab("Video Player", null, videoPlayerTab, "Watch the videos in the inbuilt media player");
 		contentPane.add(tabbedPane);
+	
+		JPanel settingsTab = new JPanel();
+		settingsTab.setToolTipText("");
+		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
 		
-		JPanel settingsPanel = new JPanel();
-		settingsPanel.setToolTipText("");
-		tabbedPane.addTab("Settings", null, settingsPanel, null);
+		
+		connectToTheServer(); //TODO Only for testing
+		
+		
+		//Sets up and adds the different tabs to the tabbed pane  //TODO Put into this system when finsihed
+		/*setupListViewTab();
+		setupVideoPlayerTab();
+		setupSettingsTab();*/
+	}
+
+	/*private void setupListViewTab() {
+		//TODO Put into this system when finsihed
 	}
 	
+	private void setupVideoPlayerTab() {
+		//TODO Put into this system when finsihed
+	}
+	
+	private void setupSettingsTab() {
+		//TODO Put into this system when finsihed
+	}*/
+
 	public void connectToTheServer() {
 		 connectToTheServer(this.host, this.port);
-	}
-	
+	}	
 	public void connectToTheServer(String host,int port) {
-		System.out.println("Trying to connect to " + host + ":" + port + ".");
+		System.out.println("Connecting to " + host + ":" + port + "...");
 		try {
 			this.serverSocket = new Socket(host,port);
 			System.out.println("Successfully connected to " + host + ":" + port);
 		} catch (UnknownHostException e) {
-			System.out.println("Unknown host , unable to connect to " + host);
+			System.out.println("Unknown host, unable to connect to: " + host + ".");
 			System.exit(-1);
 		} catch (IOException e) {
-			System.out.println("COuldnt open IO connection "+ host + ":" + port);
+			System.out.println("Couldn't open I/O connection " + host + ":" + port + ".");
 			System.exit(-1);
 		}
 		readFromServer();
@@ -116,21 +139,28 @@ public class Client extends JFrame {
 		try {
 			inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			try {
-				videoList = (List<VideoFile>)inputFromServer.readObject();
-				
+				videoList = (List<VideoFile>)inputFromServer.readObject();	
 			} catch (ClassCastException e) {
-				System.out.println("ClassCastException thingy");
+				System.out.println("Could not cast input object stream to videoList");
 				e.printStackTrace();
 			}
-			System.out.println("Reading of list complete " + host);
 		} catch (ClassNotFoundException e) {
-			System.out.println("Class not found for incoming object");
+			System.out.println("Class not found for incoming object(s)");
 			e.printStackTrace();
 			System.exit(-1);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		System.out.println("Reading list complete.");
 		updateClientWindow();
+		emptyListErrorCatch();
+	}
+	
+	private void emptyListErrorCatch() {
+		if(this.videoList.isEmpty())
+		{
+			JOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 	
 	private void updateClientWindow() {
@@ -139,15 +169,14 @@ public class Client extends JFrame {
 			selectionBox.addItem(video.getTitle());
 		}
 		this.validate();
-		selectionBox.validate();
+		//selectionBox.validate();
 	}
 
 	public void closeSockets(){
 		try {
 			this.serverSocket.close();
-			System.out.println("Successfully closed client side sockets");
 		} catch (IOException e) {
-			System.out.println("Failed to close client side sockets");
+			System.out.println("Failed to close client-sockets");
 			e.printStackTrace();
 		}
 	}

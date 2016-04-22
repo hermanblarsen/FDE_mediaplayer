@@ -17,13 +17,7 @@ public class XMLReader extends DefaultHandler{
 	String currentSubElement;
 	List<VideoFile> videoList;
 	
-	/*public static void main(String[] args) {
-		DefaultHandler parserXML = new XMLReader();
-	}*/
-	
-	
 	public XMLReader () {
-		
 	}
 	
 	@Override
@@ -97,8 +91,7 @@ public class XMLReader extends DefaultHandler{
 	}
 
 	@Override
-	public void endElement(String uri, String localName, String qName)
-			throws SAXException {
+	public void endElement(String uri, String localName, String qName) throws SAXException {
 		
 		// Finishing an element means we're definitely not in a sub-element anymore
         currentSubElement = "none";
@@ -119,12 +112,10 @@ public class XMLReader extends DefaultHandler{
 	@Override
 	public void endDocument() throws SAXException {
 		
-		System.out.println("Finished parsing, stored " + videoList.size());
+		System.out.println("Finished parsing, stored " + videoList.size() + ":" );
         for (VideoFile thisvideo : videoList) {
-            System.out.println("id: " + thisvideo.getID());
-            System.out.println("title: " + thisvideo.getTitle());
-            System.out.println("filename: " + thisvideo.getFilename());
-           
+            System.out.println("ID: " + thisvideo.getID() + " Title: " + thisvideo.getTitle() 
+            		+ " Filename: " + thisvideo.getFilename());
         }
 	}
 
@@ -150,7 +141,6 @@ public class XMLReader extends DefaultHandler{
 			catch (IOException ioe) {
 				ioe.printStackTrace();
 		}
-		
 		return this.videoList;
 	}
 

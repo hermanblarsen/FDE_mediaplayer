@@ -38,6 +38,14 @@ public class ClientTest {
 	}
 	
 	@Test
+	public void verifyErrorNoVideosAvailable() {
+		XMLReader reader = new XMLReader();
+		List<VideoFile> videoListEmpty = reader.getList("videoListEmpty.xml");
+		this.client.setVideoList(videoListEmpty);
+		//Visible check that box displays 
+	}
+	
+	@Test
 	public void checkSelectedVideoInList() {
 		JComboBox comboBox = client.selectionBox;
 		comboBox.setSelectedIndex(2);

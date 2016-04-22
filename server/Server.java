@@ -30,15 +30,16 @@ public class Server {
 				try {
 					serverSocket = new ServerSocket(port);
 				} catch (IOException e) {
-					System.out.println("Could not open socket on port " + port);
+					System.out.println("Could not open socket on port: " + port + ".");
 					System.exit(-1);
 				}
-				System.out.println("Opened Socket on port "+ port + ", Waiting");
+				System.out.println("Successfully opened socket on port: "+ port + ", awaiting connection...");
+				
 				try {
-					//server stops and waits for client to connect.
+					//Server stops and awaits client-connection
 					clientSocket = serverSocket.accept();
 				} catch (IOException e) {
-					System.out.println("Could not connect to client");
+					System.out.println("Could not connect to client.");
 					System.exit(-1);
 				}
 				sendVideoListToClient();
@@ -51,6 +52,7 @@ public class Server {
 	protected List<VideoFile> getVideoList(){
 		XMLReader reader = new XMLReader();
 		videoList = reader.getList("videoList.xml");
+//		videoList = reader.getList("videoListEmpty.xml"); //TODO Only for testing, remove 
 		return videoList;
 	}
 	
@@ -59,7 +61,7 @@ public class Server {
 			outputToClient = new ObjectOutputStream(clientSocket.getOutputStream());
 			outputToClient.writeObject(this.videoList);
 		} catch (IOException e) {
-			System.out.println("Sending video list failed");
+			System.out.println("Streaming of video list failed.");
 		}
 	}
 
@@ -68,9 +70,8 @@ public class Server {
 		try {
 			this.clientSocket.close();
 			this.serverSocket.close();
-			System.out.println("Closed server side sockets");
 		} catch (IOException e) {
-			System.out.println("Failed to close server side sockets");
+			System.out.println("Failed to close server-sockets");
 			e.printStackTrace();
 		}
 	}
