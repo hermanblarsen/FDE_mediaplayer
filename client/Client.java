@@ -14,8 +14,11 @@ import javax.swing.border.EmptyBorder;
 import server.VideoFile;
 import javax.swing.JComboBox;
 import java.awt.FlowLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -24,6 +27,10 @@ import javax.swing.BoxLayout;
 import javax.swing.JSplitPane;
 import javax.swing.JOptionPane;
 import javax.swing.*;
+import java.awt.Color;
+import java.awt.CardLayout;
+import java.awt.Component;
+import java.awt.Dimension;
 
 public class Client extends JFrame {
 	
@@ -35,6 +42,8 @@ public class Client extends JFrame {
 	
 	private JPanel contentPane;
 	protected JComboBox<String> selectionBox;
+	protected JPanel sub_panel_Time_Menu;
+	protected JPanel sub_panel_Audio_Menu;
 
 	/**
 	 * Launch the application.
@@ -85,14 +94,85 @@ public class Client extends JFrame {
 			}
 		});
 		listViewTab.add(selectionBox);
-	
-		JPanel videoPlayerTab = new JPanel();
-		tabbedPane.addTab("Video Player", null, videoPlayerTab, "Watch the videos in the inbuilt media player");
 		contentPane.add(tabbedPane);
 	
 		JPanel settingsTab = new JPanel();
 		settingsTab.setToolTipText("");
-		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
+		tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
+		
+		JPanel Video_Player_Tab = new JPanel();
+		Video_Player_Tab.setBackground(Color.BLACK);
+		tabbedPane.addTab("Video Player", null, Video_Player_Tab, null);
+		Video_Player_Tab.setLayout(new BorderLayout(0, 0));
+		Video_Player_Tab.addMouseListener(new MouseAdapter() {
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				sub_panel_Time_Menu.setVisible(false);
+				sub_panel_Time_Menu.repaint();
+				sub_panel_Audio_Menu.setVisible(false);
+				sub_panel_Audio_Menu.repaint();
+				System.out.println("Mouse entered the Video_player_Tab ");
+			}
+			
+		});
+		
+		JPanel Time_mouse_event_panel = new JPanel();
+		Time_mouse_event_panel.setOpaque(false);
+		Time_mouse_event_panel.addMouseListener(new MouseAdapter() {
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				sub_panel_Time_Menu.setVisible(true);
+				sub_panel_Time_Menu.repaint();
+				System.out.println("Mouse entered the Time menu sub panel");
+			}
+
+		});
+		Video_Player_Tab.add(Time_mouse_event_panel, BorderLayout.SOUTH);
+		
+		sub_panel_Time_Menu = new JPanel();
+		sub_panel_Time_Menu.setVisible(false);
+		Time_mouse_event_panel.add(sub_panel_Time_Menu);
+		JButton btnPlaypause = new JButton("Play/Pause");
+		sub_panel_Time_Menu.add(btnPlaypause);
+		JLabel lblTimeRemaining = new JLabel("Time Remaining");
+		sub_panel_Time_Menu.add(lblTimeRemaining);
+		JSlider slider = new JSlider();
+		sub_panel_Time_Menu.add(slider);
+		JLabel lblTimePlaying = new JLabel("Time playing");
+		sub_panel_Time_Menu.add(lblTimePlaying);
+		
+		Component verticalStrut = Box.createVerticalStrut(20);
+		Time_mouse_event_panel.add(verticalStrut);
+		
+		JPanel Audio_mouse_event_panel = new JPanel();
+		Audio_mouse_event_panel.setOpaque(false);
+		Video_Player_Tab.add(Audio_mouse_event_panel, BorderLayout.EAST);
+		Audio_mouse_event_panel.addMouseListener(new MouseAdapter() {
+			
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				sub_panel_Audio_Menu.setVisible(true);
+				sub_panel_Audio_Menu.repaint();
+				System.out.println("Mouse entered the sub_panel_Audio_Menu");
+			}
+
+		});
+		
+		Component horizontalStrut = Box.createHorizontalStrut(20);
+		Audio_mouse_event_panel.add(horizontalStrut);
+		
+		sub_panel_Audio_Menu = new JPanel();
+		Audio_mouse_event_panel.add(sub_panel_Audio_Menu);
+		sub_panel_Audio_Menu.setOpaque(false);
+		sub_panel_Audio_Menu.setVisible(false);
+		
+		
+		JSlider slider_1 = new JSlider();
+		slider_1.setOrientation(SwingConstants.VERTICAL);
+		sub_panel_Audio_Menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		sub_panel_Audio_Menu.add(slider_1);
 		
 		
 		connectToTheServer(); //TODO Only for testing
@@ -188,5 +268,4 @@ public class Client extends JFrame {
 	public void setVideoList(List<VideoFile> videoList) {
 		this.videoList = videoList;
 	}
-
 }
