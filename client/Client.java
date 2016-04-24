@@ -233,10 +233,10 @@ public class Client extends JFrame {
 		}
 		System.out.println("Reading list complete.");
 		updateClientWindow();
-		emptyListErrorCatch();
+		catchEmptyListError();
 	}
 	
-	private void emptyListErrorCatch() {
+	public void catchEmptyListError() {
 		if(this.videoList.isEmpty())
 		{
 			JOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);

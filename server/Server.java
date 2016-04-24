@@ -52,7 +52,6 @@ public class Server {
 	protected List<VideoFile> getVideoList(){
 		XMLReader reader = new XMLReader();
 		videoList = reader.getList("videoList.xml");
-//		videoList = reader.getList("videoListEmpty.xml"); //TODO Only for testing, remove 
 		return videoList;
 	}
 	

@@ -2,6 +2,7 @@ package client;
 
 import static org.junit.Assert.*;
 
+import java.awt.Component;
 import java.util.List;
 
 import javax.swing.JComboBox;
@@ -42,7 +43,9 @@ public class ClientTest {
 		XMLReader reader = new XMLReader();
 		List<VideoFile> videoListEmpty = reader.getList("videoListEmpty.xml");
 		this.client.setVideoList(videoListEmpty);
-		//Visible check that box displays 
+		this.client.catchEmptyListError();
+		//Visible test
+		assertEquals("NotFail", "NotFail");
 	}
 	
 	@Test

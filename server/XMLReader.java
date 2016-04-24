@@ -114,8 +114,8 @@ public class XMLReader extends DefaultHandler{
 		
 		System.out.println("Finished parsing, stored " + videoList.size() + ":" );
         for (VideoFile thisvideo : videoList) {
-            System.out.println("ID: " + thisvideo.getID() + " Title: " + thisvideo.getTitle() 
-            		+ " Filename: " + thisvideo.getFilename());
+            System.out.println("ID: " + thisvideo.getID() + ", Title: " + thisvideo.getTitle() 
+            		+ ", Filename: " + thisvideo.getFilename());
         }
 	}
 
