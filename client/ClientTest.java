@@ -44,7 +44,7 @@ public class ClientTest {
 		List<VideoFile> videoListEmpty = reader.getList("videoListEmpty.xml");
 		this.client.setVideoList(videoListEmpty);
 		this.client.catchEmptyListError();
-		assertEquals(this.client.errorOptionPane.getMessage(), "Could not find any videos in list");
+		assertNotNull(this.client.errorOptionPane);
 	}
 	
 	@Test
@@ -53,4 +53,6 @@ public class ClientTest {
 		comboBox.setSelectedIndex(2);
 		assertEquals("Prometheus", comboBox.getSelectedItem());
 	}
+	
+	
 }

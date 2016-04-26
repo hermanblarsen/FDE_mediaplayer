@@ -176,7 +176,7 @@ public class Client extends JFrame {
 		sub_panel_Audio_Menu.add(slider_1);
 		
 		
-		connectToTheServer(); //TODO Only for testing
+		//connectToTheServer(); //TODO Only for testing
 		
 		
 		//Sets up and adds the different tabs to the tabbed pane  //TODO Put into this system when finsihed
@@ -240,7 +240,8 @@ public class Client extends JFrame {
 	public void catchEmptyListError() {
 		if(this.videoList.isEmpty())
 		{
-			this.errorOptionPane = JOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
+			this.errorOptionPane = new JOptionPane();
+			errorOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
