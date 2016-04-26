@@ -44,6 +44,7 @@ public class Client extends JFrame {
 	protected JComboBox<String> selectionBox;
 	protected JPanel sub_panel_Time_Menu;
 	protected JPanel sub_panel_Audio_Menu;
+	protected JOptionPane errorOptionPane;
 
 	/**
 	 * Launch the application.
@@ -239,7 +240,7 @@ public class Client extends JFrame {
 	public void catchEmptyListError() {
 		if(this.videoList.isEmpty())
 		{
-			JOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
+			this.errorOptionPane = JOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
@@ -259,6 +260,11 @@ public class Client extends JFrame {
 			System.out.println("Failed to close client-sockets");
 			e.printStackTrace();
 		}
+	}
+	
+	public boolean validate_video_list_format(){
+		boolean list_is_valid = false;
+		return list_is_valid;
 	}
 	
 	public List<VideoFile> getVideoList() {

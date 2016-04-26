@@ -44,8 +44,7 @@ public class ClientTest {
 		List<VideoFile> videoListEmpty = reader.getList("videoListEmpty.xml");
 		this.client.setVideoList(videoListEmpty);
 		this.client.catchEmptyListError();
-		//Visible test
-		assertEquals("NotFail", "NotFail");
+		assertEquals(this.client.errorOptionPane.getMessage(), "Could not find any videos in list");
 	}
 	
 	@Test
