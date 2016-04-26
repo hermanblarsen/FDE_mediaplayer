@@ -234,16 +234,9 @@ public class Client extends JFrame {
 		}
 		System.out.println("Reading list complete.");
 		updateClientWindow();
-		catchEmptyListError();
+		validate_video_list_format();
 	}
 	
-	public void catchEmptyListError() {
-		if(this.videoList.isEmpty())
-		{
-			this.errorOptionPane = new JOptionPane();
-			errorOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
-		}
-	}
 	
 	private void updateClientWindow() {
 		//
@@ -264,7 +257,23 @@ public class Client extends JFrame {
 	}
 	
 	public boolean validate_video_list_format(){
-		boolean list_is_valid = false;
+		boolean list_is_valid = true;
+		if(this.videoList.isEmpty())
+		{
+			this.errorOptionPane = new JOptionPane();
+			// we should remove the popup message and just display red text where the list should be
+			errorOptionPane.showMessageDialog(contentPane, "Could not get videos from the server :(, Sorry !" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
+			list_is_valid = false;
+		}
+		for (VideoFile video : this.videoList){
+			//check that the video ID is the right length 
+			if(!(video.getID().length() == 10)){
+				list_is_valid = false;
+			}
+			else if(!(video.getFilename().contains(".mp4") || video.getFilename().contains(".mpg"))){
+				list_is_valid = false;
+			}
+		}
 		return list_is_valid;
 	}
 	
