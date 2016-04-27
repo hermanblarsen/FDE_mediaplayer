@@ -96,17 +96,21 @@ public class Client extends JFrame {
 		connectToTheServer(); //TODO Only for manualtesting
 		
 		setUpMediaPLayer();
-		
 		requestMovieStream();
 		
 		
 	}
 	
 	private void requestMovieStream() {
+		//send request
+		
+		//wait for confirmation
+		
+		//opens mediastream for chosen movie
 		String media = "rtp://@127.0.0.1:5555";
 		mediaPlayer.playMedia(media);
 	}
-
+	
 	private void setupGUI() {
 		//Setup a JFrame and a JPanel contentsPane
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -129,6 +133,8 @@ public class Client extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				JComboBox<String> combobox = (JComboBox)e.getSource();
 				String selectedTitle = (String)combobox.getSelectedItem();
+				int selectedIndex = (int)combobox.getSelectedIndex();
+				//more things going herrrree
 			}
 		});
 		listViewTab.add(selectionBox);
@@ -319,8 +325,7 @@ public class Client extends JFrame {
 	}
 	
 	private void setUpMediaPLayer(){
-		this.setUpMediaPlayer("C:/Users/habl500/JavaFurtherDigital/FDE_mediaplayer/external_archives/VLC/vlc-2.0.1");
-		//this.setUpMediaPlayer("/external_archives/VLC/vlc-2.0.1");
+		this.setUpMediaPlayer("external_archives/VLC/vlc-2.0.1");
 	}
 	private void setUpMediaPlayer(String vlcLibraryPath){
 		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), vlcLibraryPath);
