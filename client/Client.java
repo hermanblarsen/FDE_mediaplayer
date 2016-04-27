@@ -17,34 +17,52 @@ import java.awt.FlowLayout;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
-import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.JTabbedPane;
-import javax.swing.BoxLayout;
-import javax.swing.JSplitPane;
-import javax.swing.JOptionPane;
 import javax.swing.*;
 import java.awt.Color;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 
+//For VLC player
+import uk.co.caprica.vlcj.*;
+import uk.co.caprica.vlcj.binding.LibVlc;
+import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
+import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
+import uk.co.caprica.vlcj.runtime.RuntimeUtil;
+import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
+
+import com.sun.jna.*;
+
 public class Client extends JFrame {
 	
 	private List<VideoFile> videoList;
-	private Socket serverSocket;
+	protected Socket serverSocket;
 	private ObjectInputStream inputFromServer;
-	private int port = 1238;
+	private int port = 1337;
 	private String host = "127.0.0.1";
+	
+	private PlayerControlsPanel controlPanel;
+	private EmbeddedMediaPlayer mediaPlayer;
 	
 	private JPanel contentPane;
 	protected JComboBox<String> selectionBox;
 	protected JPanel sub_panel_Time_Menu;
 	protected JPanel sub_panel_Audio_Menu;
 	protected JOptionPane errorOptionPane;
+	private JPanel listViewTab;
+	private JPanel settingsTab;
+	private JPanel videoPlayerTab;
+	private JPanel vlcPlayerTestTab;
+	private JTabbedPane tabbedPane;
+	private JInternalFrame internalFrame;
 
 	/**
 	 * Launch the application.
@@ -66,9 +84,29 @@ public class Client extends JFrame {
 	 * Create the frame.
 	 */
 	public Client() {
+		
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				closeSockets();
+			}
+		});
+		
 		setupGUI();
+		connectToTheServer(); //TODO Only for manualtesting
+		
+		setUpMediaPLayer();
+		
+		requestMovieStream();
+		
+		
 	}
 	
+	private void requestMovieStream() {
+		String media = "rtp://@127.0.0.1:5555";
+		mediaPlayer.playMedia(media);
+	}
+
 	private void setupGUI() {
 		//Setup a JFrame and a JPanel contentsPane
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -78,10 +116,9 @@ public class Client extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
-		//Creates a tabbed pane, where later JPanels can be added and hence sectioned into tabs
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		
-		JPanel listViewTab = new JPanel();
+		listViewTab = new JPanel();
 		tabbedPane.addTab("Video List", null, listViewTab, "Browse videos to watch");
 		listViewTab.setLayout(null);
 		
@@ -97,15 +134,15 @@ public class Client extends JFrame {
 		listViewTab.add(selectionBox);
 		contentPane.add(tabbedPane);
 	
-		JPanel settingsTab = new JPanel();
+		settingsTab = new JPanel();
 		settingsTab.setToolTipText("");
 		tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
 		
-		JPanel Video_Player_Tab = new JPanel();
-		Video_Player_Tab.setBackground(Color.BLACK);
-		tabbedPane.addTab("Video Player", null, Video_Player_Tab, null);
-		Video_Player_Tab.setLayout(new BorderLayout(0, 0));
-		Video_Player_Tab.addMouseListener(new MouseAdapter() {
+		videoPlayerTab = new JPanel();
+		videoPlayerTab.setBackground(Color.BLACK);
+		tabbedPane.addTab("Video Player", null, videoPlayerTab, null);
+		videoPlayerTab.setLayout(new BorderLayout(0, 0));
+		videoPlayerTab.addMouseListener(new MouseAdapter() {
 			
 			@Override
 			public void mouseEntered(MouseEvent e) {
@@ -130,7 +167,7 @@ public class Client extends JFrame {
 			}
 
 		});
-		Video_Player_Tab.add(Time_mouse_event_panel, BorderLayout.SOUTH);
+		videoPlayerTab.add(Time_mouse_event_panel, BorderLayout.SOUTH);
 		
 		sub_panel_Time_Menu = new JPanel();
 		sub_panel_Time_Menu.setVisible(false);
@@ -149,7 +186,7 @@ public class Client extends JFrame {
 		
 		JPanel Audio_mouse_event_panel = new JPanel();
 		Audio_mouse_event_panel.setOpaque(false);
-		Video_Player_Tab.add(Audio_mouse_event_panel, BorderLayout.EAST);
+		videoPlayerTab.add(Audio_mouse_event_panel, BorderLayout.EAST);
 		Audio_mouse_event_panel.addMouseListener(new MouseAdapter() {
 			
 			@Override
@@ -175,10 +212,14 @@ public class Client extends JFrame {
 		sub_panel_Audio_Menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		sub_panel_Audio_Menu.add(slider_1);
 		
+		vlcPlayerTestTab = new JPanel();
+		tabbedPane.addTab("PlayerTestTab", null, vlcPlayerTestTab, null);
+		vlcPlayerTestTab.setLayout(new BorderLayout(0, 0));
 		
-		//connectToTheServer(); //TODO Only for testing
-		
-		
+		internalFrame = new JInternalFrame("New JInternalFrame");
+		vlcPlayerTestTab.add(internalFrame, BorderLayout.CENTER);
+		internalFrame.setVisible(true);
+			
 		//Sets up and adds the different tabs to the tabbed pane  //TODO Put into this system when finsihed
 		/*setupListViewTab();
 		setupVideoPlayerTab();
@@ -213,7 +254,6 @@ public class Client extends JFrame {
 			System.exit(-1);
 		}
 		readFromServer();
-		closeSockets();
 	}
 	
 	private void readFromServer(){
@@ -244,15 +284,16 @@ public class Client extends JFrame {
 			selectionBox.addItem(video.getTitle());
 		}
 		this.validate();
-		//selectionBox.validate();
 	}
 
 	public void closeSockets(){
 		try {
-			this.serverSocket.close();
+			serverSocket.close();
 		} catch (IOException e) {
 			System.out.println("Failed to close client-sockets");
 			e.printStackTrace();
+		} catch (NullPointerException e) {
+			//if connection fails then no server socket exists, hence null.
 		}
 	}
 	
@@ -276,6 +317,50 @@ public class Client extends JFrame {
 		}
 		return list_is_valid;
 	}
+	
+	private void setUpMediaPLayer(){
+		this.setUpMediaPlayer("C:/Users/habl500/JavaFurtherDigital/FDE_mediaplayer/external_archives/VLC/vlc-2.0.1");
+		//this.setUpMediaPlayer("/external_archives/VLC/vlc-2.0.1");
+	}
+	private void setUpMediaPlayer(String vlcLibraryPath){
+		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), vlcLibraryPath);
+		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
+		
+		final EmbeddedMediaPlayerComponent mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
+//		vlcPlayerTestTab.add(mediaPlayerComponent, BorderLayout.CENTER);
+//		mediaPlayer = mediaPlayerComponent.getMediaPlayer();
+//		controlPanel = new PlayerControlsPanel(mediaPlayer);
+//		
+//		vlcPlayerTestTab.add(controlPanel,  BorderLayout.SOUTH);
+//		 
+//		this.addWindowListener(new WindowAdapter() {
+//			@Override
+//			public void windowClosing(WindowEvent e) {
+//				mediaPlayerComponent.release();
+//				//TODO might need to add more closing stuff here, eg sockets also possibly make it dependant on closing something else....
+//			}
+//		});
+		
+		mediaPlayer = mediaPlayerComponent.getMediaPlayer();
+		controlPanel = new PlayerControlsPanel(mediaPlayer);
+		
+		JFrame videoTestTemp = new JFrame();
+		videoTestTemp.show();
+		videoTestTemp.setSize(800,600);
+		
+		videoTestTemp.getContentPane().add(mediaPlayerComponent, BorderLayout.CENTER);
+		videoTestTemp.getContentPane().add(controlPanel, BorderLayout.SOUTH);
+		
+		videoTestTemp.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				mediaPlayerComponent.release();
+				//TODO might need to add more closing stuff here, eg sockets also possibly make it dependant on closing something else....
+			}
+		});
+		
+	}
+	
 	
 	public List<VideoFile> getVideoList() {
 		return this.videoList;
