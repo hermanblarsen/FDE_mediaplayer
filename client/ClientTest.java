@@ -57,7 +57,7 @@ public class ClientTest {
 	@Test
 	public void checkVideoListItemsHaveValidFormat(){
 		XMLReader reader = new XMLReader();
-		List<VideoFile> videoListInvalid = reader.getList("InvalidVideoList.xml");
+		List<VideoFile> videoListInvalid = reader.getList("videoListInvalid.xml");
 		client.setVideoList(videoListInvalid);
 		assertFalse(client.validate_video_list_format());
 	}
