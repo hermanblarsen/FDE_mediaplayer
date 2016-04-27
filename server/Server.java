@@ -78,8 +78,7 @@ public class Server {
 	}
 	
 	private void setUpMediaStream(){
-		this.setUpMediaStream("C:/Users/habl500/JavaFurtherDigital/FDE_mediaplayer/external_archives/VLC/vlc-2.0.1");
-		//this.setUpMediaPlayer("/external_archives/VLC/vlc-2.0.1");
+		this.setUpMediaStream("external_archives/VLC/vlc-2.0.1");
 	}
 	private void setUpMediaStream(String vlcLibraryPath){
 		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), vlcLibraryPath);
