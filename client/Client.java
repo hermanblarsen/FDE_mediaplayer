@@ -44,6 +44,7 @@ public class Client extends JFrame {
 	protected JComboBox<String> selectionBox;
 	protected JPanel sub_panel_Time_Menu;
 	protected JPanel sub_panel_Audio_Menu;
+	protected JOptionPane errorOptionPane;
 
 	/**
 	 * Launch the application.
@@ -175,7 +176,7 @@ public class Client extends JFrame {
 		sub_panel_Audio_Menu.add(slider_1);
 		
 		
-		connectToTheServer(); //TODO Only for testing
+		//connectToTheServer(); //TODO Only for testing
 		
 		
 		//Sets up and adds the different tabs to the tabbed pane  //TODO Put into this system when finsihed
@@ -233,15 +234,9 @@ public class Client extends JFrame {
 		}
 		System.out.println("Reading list complete.");
 		updateClientWindow();
-		catchEmptyListError();
+		validate_video_list_format();
 	}
 	
-	public void catchEmptyListError() {
-		if(this.videoList.isEmpty())
-		{
-			JOptionPane.showMessageDialog(contentPane, "Could not find any videos in list" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
-		}
-	}
 	
 	private void updateClientWindow() {
 		//
@@ -259,6 +254,27 @@ public class Client extends JFrame {
 			System.out.println("Failed to close client-sockets");
 			e.printStackTrace();
 		}
+	}
+	
+	public boolean validate_video_list_format(){
+		boolean list_is_valid = true;
+		if(this.videoList.isEmpty())
+		{
+			this.errorOptionPane = new JOptionPane();
+			// we should remove the popup message and just display red text where the list should be
+			errorOptionPane.showMessageDialog(contentPane, "Could not get videos from the server :(, Sorry !" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
+			list_is_valid = false;
+		}
+		for (VideoFile video : this.videoList){
+			//check that the video ID is the right length 
+			if(!(video.getID().length() == 10)){
+				list_is_valid = false;
+			}
+			else if(!(video.getFilename().contains(".mp4") || video.getFilename().contains(".mpg"))){
+				list_is_valid = false;
+			}
+		}
+		return list_is_valid;
 	}
 	
 	public List<VideoFile> getVideoList() {

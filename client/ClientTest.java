@@ -43,9 +43,8 @@ public class ClientTest {
 		XMLReader reader = new XMLReader();
 		List<VideoFile> videoListEmpty = reader.getList("videoListEmpty.xml");
 		this.client.setVideoList(videoListEmpty);
-		this.client.catchEmptyListError();
-		//Visible test
-		assertEquals("NotFail", "NotFail");
+		this.client.validate_video_list_format();
+		assertNotNull(this.client.errorOptionPane);
 	}
 	
 	@Test
@@ -54,4 +53,14 @@ public class ClientTest {
 		comboBox.setSelectedIndex(2);
 		assertEquals("Prometheus", comboBox.getSelectedItem());
 	}
+	
+	@Test
+	public void checkVideoListItemsHaveValidFormat(){
+		XMLReader reader = new XMLReader();
+		List<VideoFile> videoListInvalid = reader.getList("InvalidVideoList.xml");
+		client.setVideoList(videoListInvalid);
+		assertFalse(client.validate_video_list_format());
+	}
+	
+	
 }
