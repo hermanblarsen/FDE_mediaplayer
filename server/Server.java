@@ -23,7 +23,7 @@ public class Server {
 	private List<VideoFile> videoList;
 	private ServerSocket serverSocket;
 	private String serverAddress = "127.0.0.1";
-	private int listPort =  1337;
+	private int listPort =  1340;
 	private int streamPort =  5555;
 	private String options = formatRtpStream(serverAddress, streamPort);
 	private Socket clientSocket;
