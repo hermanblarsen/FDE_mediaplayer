@@ -1,4 +1,4 @@
-package server;
+package src.server;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
@@ -23,7 +23,7 @@ public class Server {
 	private List<VideoFile> videoList;
 	private ServerSocket serverSocket;
 	private String serverAddress = "127.0.0.1";
-	private int listPort =  1340;
+	private int listPort =  1337;
 	private int streamPort =  5555;
 	private String options = formatRtpStream(serverAddress, streamPort);
 	private Socket clientSocket;
@@ -46,10 +46,17 @@ public class Server {
 		}
 
 	public Server(){
+		this(false);
+	}
+	public Server(boolean startStreamingImmediately){
 		//Reading and storing the video List from xml file
 		this.videoList = getVideoList();
 		openSocket();
-		setUpMediaStream();
+		
+		if(startStreamingImmediately)
+		{
+			setUpMediaStream();
+		}
 	}
 	
 	private void openSocket(){
@@ -84,9 +91,9 @@ public class Server {
 		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), vlcLibraryPath);
 		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 		
-		MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory("server/video_repository/prometheus-featureukFhp.mp4");
+		MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory("src/server/video_repository/prometheus-featureukFhp.mp4");
 		HeadlessMediaPlayer mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
-		mediaPlayer.playMedia("server/video_repository/prometheus-featureukFhp.mp4", options, ":no-sout-rtp-sap", ":no-sout-standardsap",":sout-all", ":sout-keep");
+		mediaPlayer.playMedia("src/server/video_repository/prometheus-featureukFhp.mp4", options, ":no-sout-rtp-sap", ":no-sout-standardsap",":sout-all", ":sout-keep");
 		try {
 			Thread.currentThread().join();
 		} catch (InterruptedException e) {
@@ -97,7 +104,7 @@ public class Server {
 	
 	protected List<VideoFile> getVideoList(){
 		XMLReader reader = new XMLReader();
-		videoList = reader.getList("videoList.xml");
+		videoList = reader.getList("src/server/video_repository/videoList.xml");
 		return videoList;
 	}
 	

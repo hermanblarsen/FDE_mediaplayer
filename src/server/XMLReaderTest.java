@@ -1,4 +1,4 @@
-package server;
+package src.server;
 
 import static org.junit.Assert.*;
 
@@ -18,7 +18,7 @@ public class XMLReaderTest {
 	@Before
 	public void setUp() throws Exception {
 		reader = new XMLReader();
-		videoList = reader.getList("videoList.xml");
+		videoList = reader.getList("testLists/videoList.xml");
 		videoFile0 = videoList.get(0);
 		videoFile1 = videoList.get(1);
 		videoFile2 = videoList.get(2);

@@ -1,4 +1,5 @@
-package client;
+package src.client;
+
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import server.VideoFile;
+import src.server.VideoFile;
 import javax.swing.JComboBox;
 import java.awt.FlowLayout;
 import java.awt.Window;
@@ -48,7 +49,7 @@ public class Client extends JFrame {
 	protected Socket serverSocket;
 	private ObjectInputStream inputFromServer;
 	private ObjectOutputStream outputToServer;
-	private int port = 1340;
+	private int port = 1337;
 	private String host = "127.0.0.1";
 	
 	private PlayerControlsPanel controlPanel;
@@ -276,7 +277,7 @@ public class Client extends JFrame {
 		}
 		System.out.println("Reading list complete.");
 		updateClientWindow();
-		validate_video_list_format();
+		validateVideoListContentsAndFormat();
 	}
 	
 	//refreshes all GUI elements.
@@ -300,28 +301,28 @@ public class Client extends JFrame {
 	}
 	
 	//check that the videos received are valid
-	public boolean validate_video_list_format(){
-		boolean list_is_valid = true;
+	public boolean validateVideoListContentsAndFormat(){
+		boolean listIsValid = true;
 		// First make sure that there are actually any videos in the list.
 		if(this.videoList.isEmpty())
 		{
 			this.errorOptionPane = new JOptionPane();
 			// we should remove the popup message and just display red text where the list should be
 			errorOptionPane.showMessageDialog(contentPane, "Could not get videos from the server :(, Sorry !" , "Error: Empty List", JOptionPane.ERROR_MESSAGE);
-			list_is_valid = false;
+			listIsValid = false;
 		}
 		//For each of the videos make sure that the ID has the correct format and that the file
 		//extension is valid.
 		for (VideoFile video : this.videoList){
 			//check that the video ID is the right length 
 			if(!(video.getID().length() == 10)){
-				list_is_valid = false;
+				listIsValid = false;
 			}
 			else if(!(video.getFilename().contains(".mp4") || video.getFilename().contains(".mpg"))){
-				list_is_valid = false;
+				listIsValid = false;
 			}
 		}
-		return list_is_valid;
+		return listIsValid;
 	}
 	
 /////////////////////////////////////////////////////////////////////////////////////////////
