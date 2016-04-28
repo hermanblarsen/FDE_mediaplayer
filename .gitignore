@@ -1,1 +1,4 @@
-/bin1/
+/external_archives/
+*.project
+*.classpath
+*.log
