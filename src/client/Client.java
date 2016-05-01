@@ -139,6 +139,8 @@ public class Client extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				send("STREAM");
+				String videoID = videoList.get(selectionBox.getSelectedIndex()).getID();
+				send(videoID);
 			}
 		});
 		listViewTab.add(btnPlayyyy);

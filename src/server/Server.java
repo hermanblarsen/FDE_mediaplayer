@@ -94,7 +94,7 @@ public class Server {
 									sendVideoListToClient(outputToClient);
 								}
 								else if (input.equals("STREAM")){
-									setUpMediaStream();
+									setUpMediaStream(inputFromClient.readLine());
 								}
 								else if (input.equals("CLOSE")){
 									closeSockets(thisSocket);
@@ -122,21 +122,31 @@ public class Server {
 	
 	
 	private void setUpMediaStream(){
-		this.setUpMediaStream("external_archives/VLC/vlc-2.0.1");
+		this.setUpMediaStream();
 	}
-	private void setUpMediaStream(String vlcLibraryPath){
-		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), vlcLibraryPath);
+	private void setUpMediaStream(String videoID){
+		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "external_archives/VLC/vlc-2.0.1");
 		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 		
-		MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory("src/server/video_repository/prometheus-featureukFhp.mp4");
+		String filename = getVideoNameFromID(videoID);
+		MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory("src/server/video_repository/"+filename);
 		HeadlessMediaPlayer mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
-		mediaPlayer.playMedia("src/server/video_repository/prometheus-featureukFhp.mp4", options, ":no-sout-rtp-sap", ":no-sout-standardsap",":sout-all", ":sout-keep");
+		mediaPlayer.playMedia("src/server/video_repository/"+filename, options, ":no-sout-rtp-sap", ":no-sout-standardsap",":sout-all", ":sout-keep");
 		try {
 			Thread.currentThread().join();
 		} catch (InterruptedException e) {
 			System.out.println("Exception thrown whilst streaming.");
 			e.printStackTrace();
 		}
+	}
+	
+	protected String getVideoNameFromID(String videoID){
+		for (VideoFile video : videoList){
+			if (video.getID().equals(videoID)){
+				return video.getFilename();
+			}
+		}
+		return "";
 	}
 	
 	protected List<VideoFile> getVideoList(){
