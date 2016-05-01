@@ -131,16 +131,17 @@ public class Client extends JFrame {
 		selectionBox = new JComboBox<String>();
 		selectionBox.setBounds(40, 80, 360, 30);
 		//Temporary solution to select a video from the video list
-		selectionBox.addActionListener(new ActionListener() {
+		listViewTab.add(selectionBox);
+		
+		JButton btnPlayyyy = new JButton("PLAYYYY");
+		btnPlayyyy.setBounds(415, 81, 115, 29);
+		btnPlayyyy.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JComboBox<String> combobox = (JComboBox)e.getSource();
-				String selectedTitle = (String)combobox.getSelectedItem();
-				int selectedIndex = (int)combobox.getSelectedIndex();
-				//more things going herrrree
+				send("STREAM");
 			}
 		});
-		listViewTab.add(selectionBox);
+		listViewTab.add(btnPlayyyy);
 		contentPane.add(tabbedPane);
 	
 		settingsTab = new JPanel();
@@ -258,9 +259,7 @@ public class Client extends JFrame {
 	private void readVideoListFromServer(){
 		try {
 			//tell the server to send the videolist
-			outputToServer.write("GETLIST");
-			outputToServer.newLine();
-			outputToServer.flush();
+			send("GETLIST");
 			inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			try {
 				videoList = (List<VideoFile>)inputFromServer.readObject();	
@@ -278,6 +277,20 @@ public class Client extends JFrame {
 		System.out.println("Reading list complete.");
 		updateClientWindow();
 		validateVideoListContentsAndFormat();
+	}
+	
+	/**
+	 * sends message to server
+	 * @param message
+	 */
+	private void send(String message){
+		try {
+			outputToServer.write(message);
+			outputToServer.newLine();
+			outputToServer.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	//refreshes all GUI elements.
