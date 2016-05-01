@@ -2,9 +2,11 @@ package src.client;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -48,7 +50,7 @@ public class Client extends JFrame {
 	private List<VideoFile> videoList;
 	protected Socket serverSocket;
 	private ObjectInputStream inputFromServer;
-	private ObjectOutputStream outputToServer;
+	private BufferedWriter outputToServer;
 	private int port = 1337;
 	private String host = "127.0.0.1";
 	
@@ -217,22 +219,15 @@ public class Client extends JFrame {
 		sub_panel_Audio_Menu.add(slider_1);
 		
 		
-		/////////////////////////////////////////////////////////////////////////////////////////////
-		//Temporary tab to test the vlc player
-		/////////////////////////////////////////////////////////////////////////////////////////////
-		vlcPlayerTestTab = new JPanel();
-		tabbedPane.addTab("PlayerTestTab", null, vlcPlayerTestTab, null);
-		vlcPlayerTestTab.setLayout(new BorderLayout(0, 0));
-		
-		internalFrame = new JInternalFrame("New JInternalFrame");
-		vlcPlayerTestTab.add(internalFrame, BorderLayout.CENTER);
-		internalFrame.setVisible(true);
 			
 	}
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 //Methods used to set up the connection to the server
 /////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Connects to the default host:port
+	 */
 	public void connectToTheServer() {
 		 connectToTheServer(this.host, this.port);
 	}	
@@ -241,6 +236,8 @@ public class Client extends JFrame {
 		try {
 			this.serverSocket = new Socket(host,port);
 			System.out.println("Successfully connected to " + host + ":" + port);
+			//setting up the output stream
+			this.outputToServer = new BufferedWriter(new OutputStreamWriter(this.serverSocket.getOutputStream()));
 		} catch (UnknownHostException e) {
 			System.out.println("Unknown host, unable to connect to: " + host + ".");
 			System.exit(-1);
@@ -248,7 +245,7 @@ public class Client extends JFrame {
 			System.out.println("Couldn't open I/O connection " + host + ":" + port + ".");
 			System.exit(-1);
 		}
-		readFromServer();
+		readVideoListFromServer();
 	}
 	
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,9 +255,12 @@ public class Client extends JFrame {
 //		refresh its list by re-requesting it from the server. The current approach only allows
 //		the list to be sent once at the start.
 /////////////////////////////////////////////////////////////////////////////////////////////
-	private void readFromServer(){
+	private void readVideoListFromServer(){
 		try {
-			//call requestVideoListFromServer() method.
+			//tell the server to send the videolist
+			outputToServer.write("GETLIST");
+			outputToServer.newLine();
+			outputToServer.flush();
 			inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			try {
 				videoList = (List<VideoFile>)inputFromServer.readObject();	
