@@ -221,7 +221,8 @@ public class Client extends JFrame {
 		sub_panel_Audio_Menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		sub_panel_Audio_Menu.add(slider_1);
 		
-		
+		this.setPreferredSize(new Dimension(800, 600));
+		this.pack();//makes sure everything is displayable.
 			
 	}
 
@@ -355,15 +356,10 @@ public class Client extends JFrame {
 		mediaPlayer = mediaPlayerComponent.getMediaPlayer();
 		controlPanel = new PlayerControlsPanel(mediaPlayer);
 		
-		//temporary code used for testing. will be moved to the actual player tab.
-		JFrame videoTestTemp = new JFrame();
-		videoTestTemp.show();
-		videoTestTemp.setSize(800,600);
+		videoPlayerTab.add(mediaPlayerComponent, BorderLayout.CENTER);
+		videoPlayerTab.add(controlPanel, BorderLayout.SOUTH);
 		
-		videoTestTemp.getContentPane().add(mediaPlayerComponent, BorderLayout.CENTER);
-		videoTestTemp.getContentPane().add(controlPanel, BorderLayout.SOUTH);
-		
-		videoTestTemp.addWindowListener(new WindowAdapter() {
+		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				mediaPlayerComponent.release();
