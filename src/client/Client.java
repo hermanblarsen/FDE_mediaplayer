@@ -52,6 +52,7 @@ public class Client extends JFrame {
 	private ObjectInputStream inputFromServer;
 	private BufferedWriter outputToServer;
 	private int port = 1337;
+	private int streamPort;
 	private String host = "127.0.0.1";
 	
 	private PlayerControlsPanel controlPanel;
@@ -106,7 +107,7 @@ public class Client extends JFrame {
 		//wait for confirmation
 		
 		//opens mediastream for chosen movie
-		String media = "rtp://@127.0.0.1:5555";
+		String media = "rtp://@127.0.0.1:"+streamPort;
 		mediaPlayer.playMedia(media);
 	}
 	
@@ -239,9 +240,11 @@ public class Client extends JFrame {
 		System.out.println("Connecting to " + host + ":" + port + "...");
 		try {
 			this.serverSocket = new Socket(host,port);
-			System.out.println("Successfully connected to " + host + ":" + port);
+			
 			//setting up the output stream
 			this.outputToServer = new BufferedWriter(new OutputStreamWriter(this.serverSocket.getOutputStream()));
+			this.inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
+			System.out.println("Successfully connected to " + host + ":" + port);
 		} catch (UnknownHostException e) {
 			System.out.println("Unknown host, unable to connect to: " + host + ".");
 			System.exit(-1);
@@ -249,6 +252,19 @@ public class Client extends JFrame {
 			System.out.println("Couldn't open I/O connection " + host + ":" + port + ".");
 			System.exit(-1);
 		}
+		
+		//request the streamport from the server
+		System.out.println("getting streaming port... ");
+		send("STREAMPORT");
+		try {
+			this.streamPort = (int)inputFromServer.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println("getting streaming port :"+ this.streamPort);
+		//get the video list from the server
 		readVideoListFromServer();
 	}
 	
@@ -263,7 +279,6 @@ public class Client extends JFrame {
 		try {
 			//tell the server to send the videolist
 			send("GETLIST");
-			inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			try {
 				videoList = (List<VideoFile>)inputFromServer.readObject();	
 			} catch (ClassCastException e) {

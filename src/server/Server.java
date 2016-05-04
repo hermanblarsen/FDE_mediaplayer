@@ -28,23 +28,22 @@ public class Server {
 	private ServerSocket serverSocket;
 	private String serverAddress = "127.0.0.1";
 	private int listPort =  1337;
-	private int streamPort =  5555;
-	private String options = formatRtpStream(serverAddress, streamPort);
+	private int initialStreamPort =  5555;
+	private List<Integer> streamPortList = new ArrayList<Integer>();
+	private String options = formatRtpStream(serverAddress, initialStreamPort);
 	private Socket clientSocket;
+	private List<ClientConnection> clientList = new ArrayList<ClientConnection>(); 
 
-	private Thread socketThread;
-	
-	
 	public static void main(String[] args){
 		new Server(); //Main for testing
 	}
 	
-	private String formatRtpStream(String serverAddress, int serverPort) {
+	private String formatRtpStream(String serverAddress, int streamPort) {
 		StringBuilder sb = new StringBuilder(60);
 		sb.append(":sout=#rtp{dst=");
 		sb.append(serverAddress);
 		sb.append(",port=");
-		sb.append(serverPort);
+		sb.append(streamPort);
 		sb.append(",mux=ts}");
 		return sb.toString();
 		}
@@ -64,53 +63,17 @@ public class Server {
 				System.out.println("Successfully opened socket on port: "+ listPort + ", awaiting connection...");
 				this.clientSocket = this.serverSocket.accept();
 				System.out.println("Successfully connected to client.");
-				Thread connectionThread = new Thread("connection"){
-					private Socket thisSocket;
-					private ObjectOutputStream outputToClient;
-					private BufferedReader inputFromClient;
-					public void run(){
-						thisSocket = clientSocket;
-						try {
-							outputToClient = new ObjectOutputStream(thisSocket.getOutputStream());
-							inputFromClient =  new BufferedReader(new InputStreamReader(thisSocket.getInputStream()));
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						while(true){
-							try {
-								String input;
-								if(inputFromClient.ready()){
-									input = inputFromClient.readLine();
-									System.out.println("Message recieved from client: " + input);
-								}else{
-									continue;
-								}
-								if (input == null){
-									continue;
-								}
-								else if (input.equals("GETLIST")){
-									System.out.println("Sending list to client");
-									getVideoList();
-									sendVideoListToClient(outputToClient);
-								}
-								else if (input.equals("STREAM")){
-									setUpMediaStream(inputFromClient.readLine());
-								}
-								else if (input.equals("CLOSE")){
-									closeSockets(thisSocket);
-									break;
-								}
-								else{
-									continue;
-								}
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-						}
-					}
-				};
-				//starting the connection thread with client
-				connectionThread.start();
+				streamPortList.add(initialStreamPort + streamPortList.size());
+				
+				int streamport = streamPortList.get(streamPortList.size()-1);
+				String options = formatRtpStream(this.serverAddress,streamport);
+				
+				//creating and starting client thread
+				ClientConnection tempclient = new ClientConnection(this.clientSocket, streamport,options);
+				this.clientList.add(tempclient);
+				Thread clientThread = new Thread(tempclient);
+				clientThread.start();
+				
 				System.out.println("Successfully started client thread");
 			} catch (IOException e) {
 				System.out.println("ERROR! connection with client failed");
@@ -120,49 +83,6 @@ public class Server {
 		}
 	}
 	
-	
-	private void setUpMediaStream(){
-		this.setUpMediaStream();
-	}
-	private void setUpMediaStream(String videoID){
-		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "external_archives/VLC/vlc-2.0.1");
-		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
-		
-		String filename = getVideoNameFromID(videoID);
-		MediaPlayerFactory mediaPlayerFactory = new MediaPlayerFactory("src/server/video_repository/"+filename);
-		HeadlessMediaPlayer mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
-		mediaPlayer.playMedia("src/server/video_repository/"+filename, options, ":no-sout-rtp-sap", ":no-sout-standardsap",":sout-all", ":sout-keep");
-		try {
-			Thread.currentThread().join();
-		} catch (InterruptedException e) {
-			System.out.println("Exception thrown whilst streaming.");
-			e.printStackTrace();
-		}
-	}
-	
-	protected String getVideoNameFromID(String videoID){
-		for (VideoFile video : videoList){
-			if (video.getID().equals(videoID)){
-				return video.getFilename();
-			}
-		}
-		return "";
-	}
-	
-	protected List<VideoFile> getVideoList(){
-		XMLReader reader = new XMLReader();
-		videoList = reader.getList("src/server/video_repository/videoList.xml");
-		return videoList;
-	}
-	
-	public void sendVideoListToClient(ObjectOutputStream outputToClient){
-		try {
-			outputToClient.writeObject(this.videoList);
-		} catch (IOException e) {
-			System.out.println("Streaming of video list failed.");
-		}
-	}
-
 
 	public void closeSockets(Socket socket){
 		try {
