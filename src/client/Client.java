@@ -14,6 +14,8 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import src.server.VideoFile;
 import javax.swing.JComboBox;
@@ -50,7 +52,7 @@ public class Client extends JFrame {
 	private List<VideoFile> videoList;
 	protected Socket serverSocket;
 	private ObjectInputStream inputFromServer;
-	private BufferedWriter outputToServer;
+	private ObjectOutputStream outputToServer;
 	private int port = 1337;
 	private int streamPort;
 	private String host = "127.0.0.1";
@@ -69,6 +71,7 @@ public class Client extends JFrame {
 	private JPanel vlcPlayerTestTab;
 	private JTabbedPane tabbedPane;
 	private JInternalFrame internalFrame;
+	private long mediaLength;
 
 	/**
 	 * Launch the application.
@@ -134,6 +137,7 @@ public class Client extends JFrame {
 		//Temporary solution to select a video from the video list
 		listViewTab.add(selectionBox);
 		
+		// TEMP PLAY BUTTON
 		JButton btnPlayyyy = new JButton("PLAYYYY");
 		btnPlayyyy.setBounds(415, 81, 115, 29);
 		btnPlayyyy.addActionListener(new ActionListener() {
@@ -142,6 +146,15 @@ public class Client extends JFrame {
 				send("STREAM");
 				String videoID = videoList.get(selectionBox.getSelectedIndex()).getID();
 				send(videoID);
+				try {
+					mediaLength = (long) inputFromServer.readObject();
+				} catch (ClassNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 		});
 		listViewTab.add(btnPlayyyy);
@@ -185,10 +198,42 @@ public class Client extends JFrame {
 		sub_panel_Time_Menu.setVisible(false);
 		Time_mouse_event_panel.add(sub_panel_Time_Menu);
 		JButton btnPlaypause = new JButton("Play/Pause");
+		btnPlaypause.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//check if there is anything to play
+				if (mediaPlayer.isPlayable()){
+					//depending on if the video is allready playing the button function changes.
+					if(mediaPlayer.isPlaying()){
+						mediaPlayer.pause();
+					}else{
+						mediaPlayer.play();
+					}
+				}
+			}
+		});
+		
 		sub_panel_Time_Menu.add(btnPlaypause);
 		JLabel lblTimeRemaining = new JLabel("Time Remaining");
 		sub_panel_Time_Menu.add(lblTimeRemaining);
-		JSlider slider = new JSlider();
+		JSlider slider = new JSlider(0,100);
+		slider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider slider = (JSlider) e.getSource();
+				float value = ((float)slider.getValue())/100f;
+				//first check if there is playable media
+				if (mediaPlayer.isPlayable()) {
+					// Avoid end of file freeze-up
+			        if(value > 0.99f) {
+			        	value = 0.99f;
+			        }
+					send("SKIP");
+					send(value);
+				}
+			}
+		});
 		sub_panel_Time_Menu.add(slider);
 		JLabel lblTimePlaying = new JLabel("Time playing");
 		sub_panel_Time_Menu.add(lblTimePlaying);
@@ -218,7 +263,22 @@ public class Client extends JFrame {
 		
 		
 		JSlider slider_1 = new JSlider();
+		slider_1.setMaximum(100);
+		slider_1.setMinimum(0);
+		slider_1.setValue(50);
 		slider_1.setOrientation(SwingConstants.VERTICAL);
+		slider_1.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				JSlider slider = (JSlider)e.getSource();
+				int volume_value = slider.getValue();
+				//check if video is actually playable
+				if( mediaPlayer.isPlayable()){
+					mediaPlayer.setVolume(volume_value);
+				}
+			}
+		});
 		sub_panel_Audio_Menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		sub_panel_Audio_Menu.add(slider_1);
 		
@@ -242,7 +302,7 @@ public class Client extends JFrame {
 			this.serverSocket = new Socket(host,port);
 			
 			//setting up the output stream
-			this.outputToServer = new BufferedWriter(new OutputStreamWriter(this.serverSocket.getOutputStream()));
+			this.outputToServer = new ObjectOutputStream(this.serverSocket.getOutputStream());
 			this.inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			System.out.println("Successfully connected to " + host + ":" + port);
 		} catch (UnknownHostException e) {
@@ -301,11 +361,9 @@ public class Client extends JFrame {
 	 * sends message to server
 	 * @param message
 	 */
-	private void send(String message){
+	private void send(Object obj){
 		try {
-			outputToServer.write(message);
-			outputToServer.newLine();
-			outputToServer.flush();
+			outputToServer.writeObject(obj);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -369,10 +427,11 @@ public class Client extends JFrame {
 		final EmbeddedMediaPlayerComponent mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 		
 		mediaPlayer = mediaPlayerComponent.getMediaPlayer();
-		controlPanel = new PlayerControlsPanel(mediaPlayer);
+		//controlPanel = new PlayerControlsPanel(mediaPlayer);
+		
 		
 		videoPlayerTab.add(mediaPlayerComponent, BorderLayout.CENTER);
-		videoPlayerTab.add(controlPanel, BorderLayout.SOUTH);
+		//videoPlayerTab.add(controlPanel, BorderLayout.SOUTH);
 		
 		this.addWindowListener(new WindowAdapter() {
 			@Override

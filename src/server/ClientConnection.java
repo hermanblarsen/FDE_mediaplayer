@@ -3,6 +3,7 @@ package src.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
@@ -20,7 +21,7 @@ public class ClientConnection implements Runnable {
 	private int streamPort;
 	private Socket thisSocket;
 	private ObjectOutputStream outputToClient;
-	private BufferedReader inputFromClient;
+	private ObjectInputStream inputFromClient;
 	private String streamingOptions;
 	
 	//variables for the media player
@@ -39,19 +40,21 @@ public class ClientConnection implements Runnable {
 	public void run(){
 		try {
 			outputToClient = new ObjectOutputStream(thisSocket.getOutputStream());
-			inputFromClient =  new BufferedReader(new InputStreamReader(thisSocket.getInputStream()));
+			inputFromClient =  new ObjectInputStream(thisSocket.getInputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		while(true){
 			try {
-				String input;
-				if(inputFromClient.ready()){
-					input = inputFromClient.readLine();
-					System.out.println("Message recieved from client: " + input);
-				}else{
-					continue;
+				
+				String input ="";
+				try {
+					input = (String) inputFromClient.readObject();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
+				System.out.println("Message recieved from client: " + input);
 				if (input == null){
 					continue;
 				}
@@ -60,7 +63,13 @@ public class ClientConnection implements Runnable {
 					sendVideoListToClient();
 				}
 				else if (input.equals("STREAM")){
-					String videoID = inputFromClient.readLine();
+					String videoID = "";
+					try {
+						videoID = (String) inputFromClient.readObject();
+					} catch (ClassNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					System.out.println("Client requests " + videoID + " stream.");
 					setUpMediaStream(videoID);
 				}
@@ -74,6 +83,16 @@ public class ClientConnection implements Runnable {
 				else if (input.equals("STREAMPORT")){
 					outputToClient.writeObject(this.streamPort);
 					System.out.println("Set client streamport as :" + this.streamPort);
+				}
+				else if(input.equals("SKIP")){
+					float position = 0;
+					try {
+						position = (float) inputFromClient.readObject();
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					}
+					System.out.println("Skipping to :" + position);
+					mediaPlayer.setPosition(position);
 				}
 				else{
 					continue;
@@ -109,7 +128,11 @@ public class ClientConnection implements Runnable {
 		mediaPlayerFactory = new MediaPlayerFactory("src/server/video_repository/"+filename);
 		mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
 		mediaPlayer.playMedia("src/server/video_repository/"+filename, this.streamingOptions, ":no-sout-rtp-sap", ":no-sout-standardsap",":sout-all", ":sout-keep");
-		
+		try {
+			outputToClient.writeObject(mediaPlayer.getLength());
+		} catch (IOException e) {
+			System.out.println("ERROR: cant send media length to client");
+		}
 	}
 
 	/**
