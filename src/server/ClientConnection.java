@@ -54,38 +54,38 @@ public class ClientConnection implements Runnable {
 		userListXMLreader reader = new userListXMLreader();
 		userList = reader.parseUserAccountList();
 		//Attempt login
-		Boolean loggedin = true;
+		Boolean loggedin = false;
 		while(true){
 			try {
-				input = (String) inputFromClient.readObject();
+				input = (String) read();
 				String pass = input;
-				input = (String) inputFromClient.readObject();
+				input = (String) read();
 				pass += input;
 				
 				for(UserAccount user : userList){
 					//check for user name
 					if((user.getUserNameID()+ user.getPassword()).equals(pass)){
 						System.out.println("LOGIN SUCCEDED");
-						loggedin = false;
+						send("LOGIN SUCCEDED");
+						loggedin = true;
+						//sending user account data to client
+						send(user);
 						break;
 					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (!loggedin) {
+			if (loggedin) {
 				break;
 			}
 			System.out.println("LOGIN FAILED");
+			send("LOGIN FAILED");
 		}
-		while(true){
+		while(clientIsConnected){
 			try {
 
-				try {
-					input = (String) inputFromClient.readObject();
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				}
+				input = (String) read();
 				System.out.println("Message recieved from client: " + input);
 
 				if (input == null) {
@@ -94,25 +94,17 @@ public class ClientConnection implements Runnable {
 					sendVideoListToClient();
 				} else if (input.equals("STREAM")) {
 					String videoID = "";
-					try {
-						videoID = (String) inputFromClient.readObject();
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-					}
+					videoID = (String) read();
 					setUpMediaStream(videoID);
 				} else if (input.equals("STOPSTREAM")) {
 					stopStream();
 				} else if (input.equals("CLOSE")) {
 					break;
 				} else if (input.equals("STREAMPORT")) {
-					outputToClient.writeObject(this.streamPort);
+					send(this.streamPort);
 				} else if (input.equals("SKIP")) {
 					float videoPosition = 0;
-					try {
-						videoPosition = (float) inputFromClient.readObject();
-					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
-					}
+					videoPosition = (float) read();
 					mediaPlayer.setPosition(videoPosition);
 				} else if (input.equals("CLOSECONNECTION")) {
 					this.connectedClientSocket.close();
@@ -127,6 +119,24 @@ public class ClientConnection implements Runnable {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	private void send(Object output) {
+		try {
+			outputToClient.writeObject(output);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public Object read(){
+		Object obj = null;
+		try {
+			obj = inputFromClient.readObject();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return obj;
 	}
 
 	/**
@@ -146,11 +156,7 @@ public class ClientConnection implements Runnable {
 	}
 
 	public void sendVideoListToClient() {
-		try {
-			this.outputToClient.writeObject(getVideoList());
-		} catch (IOException e) {
-			// No action appears necessary
-		}
+		send(getVideoList());
 	}
 
 	private void setUpMediaStream(String desiredVideoID) {
@@ -161,11 +167,7 @@ public class ClientConnection implements Runnable {
 		mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
 		mediaPlayer.playMedia(videoRepositoryDatapath + filenameVideo, this.streamingOptions, ":no-sout-rtp-sap",
 				":no-sout-standardsap", ":sout-all", ":sout-keep");
-		try {
-			outputToClient.writeObject(mediaPlayer.getLength());
-		} catch (IOException e) {
-			// No action appears necessary
-		}
+		send(mediaPlayer.getLength());
 	}
 
 	/**
