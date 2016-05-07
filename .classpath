@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path=""/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="C:/Users/jonat/Documents/GitHub/FDE_mediaplayer/external_archives/VLC/vlcj-2.0.0/vlcj-1.2.2-test.jar"/>
-	<classpathentry kind="lib" path="C:/Users/jonat/Documents/GitHub/FDE_mediaplayer/external_archives/VLC/vlcj-2.0.0/vlcj-2.0.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/herrl/Documents/GitHub/FDE_mediaplayer/external_archives/VLC/vlcj-2.0.0/vlcj-1.2.2-test.jar"/>
+	<classpathentry kind="lib" path="C:/Users/herrl/Documents/GitHub/FDE_mediaplayer/external_archives/VLC/vlcj-2.0.0/vlcj-2.0.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

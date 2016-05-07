@@ -15,6 +15,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import src.server.UserAccount;
 import src.server.VideoFile;
 import javax.swing.JComboBox;
 import java.awt.FlowLayout;
@@ -36,12 +37,10 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
 
 import com.sun.jna.*;
-import com.jgoodies.forms.layout.FormLayout;
-import com.jgoodies.forms.layout.ColumnSpec;
-import com.jgoodies.forms.layout.RowSpec;
-import com.jgoodies.forms.layout.FormSpecs;
 
 public class Client extends JFrame {
+	
+	private UserAccount user = null;
 
 	
 	protected Socket serverSocket;
@@ -90,16 +89,9 @@ public class Client extends JFrame {
 	public Client() {
 		setupGUI();
 		connectToTheServer(); // TODO Only for manualtesting
-		setUpMediaPLayer();
-		requestMovieStream();
 	}
 
 	private void requestMovieStream() {
-		// send request
-
-		// wait for confirmation
-
-		// opens mediastream for chosen movie
 		String media = "rtp://@127.0.0.1:" + streamPort;
 		mediaPlayer.playMedia(media);
 	}
@@ -344,6 +336,7 @@ public class Client extends JFrame {
 		statusPanel.add(textPane, BorderLayout.CENTER);
 
 		this.setPreferredSize(new Dimension(800, 600));
+		this.tabbedPane.setSelectedIndex(1);
 		this.pack();// makes sure everything is displayable.
 
 	}
@@ -391,23 +384,7 @@ public class Client extends JFrame {
 		System.out.println("Requesting streaming port number..."); // TODO
 																	// change to
 																	// status
-																	// bar
-		send("STREAMPORT");
-		try {
-			this.streamPort = (int) inputFromServer.readObject();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.out.println("Streaming port: " + this.streamPort + "received"); // TODO
-																				// change
-																				// to
-																				// status
-																				// bar
-		// get the video list from the server
-		getVideoListFromServer();
-		
+																	// bar	
 	}
 
 	private void getVideoListFromServer() {
@@ -453,11 +430,24 @@ public class Client extends JFrame {
 			e.printStackTrace();
 		}
 	}
+	private Object read(){
+		Object obj = null;
+		try {
+			obj = inputFromServer.readObject();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return obj;
+	}
 
 	// refreshes all GUI elements.
 	private void updateClientWindow() {
 		for (VideoFile video : videoList) {
-			selectionBox.addItem(video.getTitle());
+			//selectionBox.addItem(video.getTitle()); //TODO add each video to table!
 		}
 		this.validate();
 	}
@@ -547,9 +537,24 @@ public class Client extends JFrame {
 	}
 
 
-	public Boolean login() {
+	public void login() {
 		send(this.userNameField.getText().toString());
 		send(new String(this.passwordField.getPassword()));
-		return null;
+		String response =(String) read();
+		if (response.equals("LOGIN SUCCEDED")) {
+			this.user = (UserAccount) read();
+			send("STREAMPORT");
+			this.streamPort = (int) read();
+			System.out.println("Streaming port: " + this.streamPort + "received"); // TODO
+																					// change
+																					// to
+																					// status
+																					// bar
+			// get the video list from the server
+			getVideoListFromServer();
+			setUpMediaPLayer();
+			requestMovieStream();
+			tabbedPane.setSelectedIndex(0);
+		}
 	}
 }

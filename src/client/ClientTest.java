@@ -76,6 +76,5 @@ public class ClientTest {
 		
 		loginStatus = testClient.login("TestUser","wrongPassword");
 		assertFalse(loginStatus);
-		
 	}
 }

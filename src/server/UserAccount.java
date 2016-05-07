@@ -1,9 +1,10 @@
 package src.server;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserAccount {
+public class UserAccount implements Serializable{
 	private String userNameID;
 	public String getUserNameID() {
 		return userNameID;
