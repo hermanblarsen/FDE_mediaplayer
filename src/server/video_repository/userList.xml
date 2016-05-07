@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<userList version="sample">
+    <User id="UserName1">
+        <password>Password1</password>
+    </User>
+	<User id="UserName2">
+        <password>Password2</password>
+    </User>
+	<User id="UserName3">
+        <password>Password3</password>
+    </User>
+	<User id="UserName4">
+        <password>Password4</password>
+    </User>
+	
+</userList>

@@ -22,7 +22,6 @@ public class ClientTest {
 	public void setUp() throws Exception {
 		System.out.println("NB:NB:NB:NB:NB:NB:NB: TURN OFF MEDIAPLAYER AND STREAMING BEFORE RUNNING THIS TEST, OR ELSE...: WON'T RUN!");
 		src.server.Server.main(null);
-				
 		testClient = new Client();
 		testClient.connectToTheServer();
 	}
@@ -86,5 +85,15 @@ public class ClientTest {
 		this.testClient.setVideoList(videoListEmpty);
 		this.testClient.validateVideoListContentsAndFormat();
 		assertNotNull(this.testClient.errorOptionPane);
+	}
+	
+	@Test
+	public void verifyClientLoginworks(){
+		Boolean loginStatus = testClient.login("TestUser","password");
+		assertTrue(loginStatus);
+		
+		loginStatus = testClient.login("TestUser","wrongPassword");
+		assertFalse(loginStatus);
+		
 	}
 }

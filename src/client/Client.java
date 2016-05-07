@@ -72,6 +72,8 @@ public class Client extends JFrame {
 	private JTabbedPane tabbedPane;
 	private JInternalFrame internalFrame;
 	private long mediaLength;
+	private JTextField userNameField;
+	private JPasswordField passwordField;
 
 	/**
 	 * Launch the application.
@@ -159,10 +161,38 @@ public class Client extends JFrame {
 		});
 		listViewTab.add(btnPlayyyy);
 		contentPane.add(tabbedPane);
-	
-		settingsTab = new JPanel();
-		settingsTab.setToolTipText("");
-		tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
+		
+			settingsTab = new JPanel();
+			settingsTab.setToolTipText("");
+			tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
+			settingsTab.setLayout(null);
+			
+			JLabel lblUsername = new JLabel("Username:");
+			lblUsername.setBounds(0, 16, 87, 32);
+			settingsTab.add(lblUsername);
+			
+			userNameField = new JTextField();
+			userNameField.setBounds(102, 19, 146, 26);
+			settingsTab.add(userNameField);
+			userNameField.setColumns(10);
+			
+			JLabel lblPassword = new JLabel("Password:");
+			lblPassword.setBounds(0, 64, 87, 20);
+			settingsTab.add(lblPassword);
+			
+			passwordField = new JPasswordField();
+			passwordField.setBounds(102, 61, 146, 26);
+			settingsTab.add(passwordField);
+			
+			JButton btnLogin = new JButton("Login");
+			btnLogin.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					login();
+				}
+			});
+			btnLogin.setBounds(0, 103, 248, 29);
+			settingsTab.add(btnLogin);
 		
 		/////////////////////////////////////////////////////////////////////////////////////////////
 		//Tab where the selected video will be displayed
@@ -312,7 +342,7 @@ public class Client extends JFrame {
 			System.out.println("Couldn't open I/O connection " + host + ":" + port + ".");
 			System.exit(-1);
 		}
-		
+		/*
 		//request the streamport from the server
 		System.out.println("getting streaming port... ");
 		send("STREAMPORT");
@@ -326,6 +356,7 @@ public class Client extends JFrame {
 		System.out.println("getting streaming port :"+ this.streamPort);
 		//get the video list from the server
 		readVideoListFromServer();
+		*/
 	}
 	
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -452,5 +483,12 @@ public class Client extends JFrame {
 
 	public void setVideoList(List<VideoFile> videoList) {
 		this.videoList = videoList;
+	}
+
+
+	public Boolean login() {
+		send(this.userNameField.getText().toString());
+		send(new String(this.passwordField.getPassword()));
+		return null;
 	}
 }

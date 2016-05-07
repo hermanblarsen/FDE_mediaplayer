@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.sun.jna.Native;
@@ -23,6 +24,7 @@ public class ClientConnection implements Runnable {
 	private ObjectOutputStream outputToClient;
 	private ObjectInputStream inputFromClient;
 	private String streamingOptions;
+	private List<UserAccount> userList = new ArrayList<UserAccount>();
 	
 	//variables for the media player
 	private MediaPlayerFactory mediaPlayerFactory;
@@ -44,10 +46,37 @@ public class ClientConnection implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		String input ="";
+		//Read user list
+		userListXMLreader reader = new userListXMLreader();
+		userList = reader.parseUserAccountList();
+		//Attempt login
+		Boolean loggedin = true;
 		while(true){
 			try {
+				input = (String) inputFromClient.readObject();
+				String pass = input;
+				input = (String) inputFromClient.readObject();
+				pass += input;
 				
-				String input ="";
+				for(UserAccount user : userList){
+					//check for user name
+					if((user.getUserNameID()+ user.getPassword()).equals(pass)){
+						System.out.println("LOGIN SUCCEDED");
+						loggedin = false;
+						break;
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			if (!loggedin) {
+				break;
+			}
+			System.out.println("LOGIN FAILED");
+		}
+		while(true){
+			try {
 				try {
 					input = (String) inputFromClient.readObject();
 				} catch (ClassNotFoundException e) {

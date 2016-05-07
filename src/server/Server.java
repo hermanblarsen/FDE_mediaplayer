@@ -22,6 +22,7 @@ import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
 
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
+import com.sun.jna.platform.win32.Netapi32Util.User;
 
 public class Server {
 	private List<VideoFile> videoList;
