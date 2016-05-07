@@ -24,7 +24,7 @@ public class Server {
 		try {
 			serverSocket = new ServerSocket(communicationPort);
 		} catch (IOException e) {
-			System.out.println("ERROR! Unable to create server socket");	//Leave?
+			System.out.println("ERROR! Unable to create server socket");	//Leave out?
 			e.printStackTrace();
 		}
 		//Awaiting client connections

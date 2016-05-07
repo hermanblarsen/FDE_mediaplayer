@@ -53,8 +53,8 @@ public class Client extends JFrame {
 
 	private JPanel contentPane;
 	protected JComboBox<String> selectionBox;
-	protected JPanel sub_panel_Time_Menu;
-	protected JPanel sub_panel_Audio_Menu;
+	protected JPanel subPanelControlMenu;
+	protected JPanel subPanelAudioMenu;
 	protected JOptionPane errorOptionPane;
 	private JPanel listViewTab;
 	private JPanel settingsTab;
@@ -120,9 +120,9 @@ public class Client extends JFrame {
 		listViewTab.add(selectionBox);
 
 		// TEMP PLAY BUTTON
-		JButton btnPlay = new JButton("PLAY");
-		btnPlay.setBounds(415, 81, 115, 29);
-		btnPlay.addActionListener(new ActionListener() {
+		JButton playButton = new JButton("PLAY");
+		playButton.setBounds(415, 81, 115, 29);
+		playButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				send("STREAM");
@@ -137,7 +137,7 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		listViewTab.add(btnPlay);
+		listViewTab.add(playButton);
 		contentPane.add(tabbedPane);
 
 		settingsTab = new JPanel();
@@ -154,36 +154,34 @@ public class Client extends JFrame {
 		videoPlayerTab.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				sub_panel_Time_Menu.setVisible(false);
-				sub_panel_Time_Menu.repaint();
-				sub_panel_Audio_Menu.setVisible(false);
-				sub_panel_Audio_Menu.repaint();
-				System.out.println("Mouse entered the Video_player_Tab ");
+				subPanelControlMenu.setVisible(false);
+				subPanelControlMenu.repaint();
+				subPanelAudioMenu.setVisible(false);
+				subPanelAudioMenu.repaint();
 			}
 		});
 
-		JPanel Time_mouse_event_panel = new JPanel();
-		Time_mouse_event_panel.setOpaque(false);
-		Time_mouse_event_panel.addMouseListener(new MouseAdapter() {
+		JPanel mouseEventPanelControlMenu = new JPanel();
+		mouseEventPanelControlMenu.setOpaque(false);
+		mouseEventPanelControlMenu.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				sub_panel_Time_Menu.setVisible(true);
-				sub_panel_Time_Menu.repaint();
-				// System.out.println("Mouse entered the Time menu sub panel");
+				subPanelControlMenu.setVisible(true);
+				subPanelControlMenu.repaint();
 			}
 		});
-		videoPlayerTab.add(Time_mouse_event_panel, BorderLayout.SOUTH);
+		videoPlayerTab.add(mouseEventPanelControlMenu, BorderLayout.SOUTH);
 
-		sub_panel_Time_Menu = new JPanel();
-		sub_panel_Time_Menu.setVisible(false);
-		Time_mouse_event_panel.add(sub_panel_Time_Menu);
-		JButton btnPlaypause = new JButton("Play/Pause");
-		btnPlaypause.addActionListener(new ActionListener() {
+		subPanelControlMenu = new JPanel();
+		subPanelControlMenu.setVisible(false);
+		mouseEventPanelControlMenu.add(subPanelControlMenu);
+		JButton playPauseButton = new JButton("Play/Pause");
+		playPauseButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// check if there is anything to play
 				if (mediaPlayer.isPlayable()) {
-					// depending on if the video is allready playing the button
+					// depending on if the video is already playing the button
 					// function changes.
 					if (mediaPlayer.isPlaying()) {
 						mediaPlayer.pause();
@@ -194,9 +192,9 @@ public class Client extends JFrame {
 			}
 		});
 
-		sub_panel_Time_Menu.add(btnPlaypause);
-		JLabel lblTimeRemaining = new JLabel("Time Remaining");
-		sub_panel_Time_Menu.add(lblTimeRemaining);
+		subPanelControlMenu.add(playPauseButton);
+		JLabel timeRemainingLabel = new JLabel("Time Remaining");
+		subPanelControlMenu.add(timeRemainingLabel);
 		JSlider positionTimeSlider = new JSlider(0, 100);
 		positionTimeSlider.addChangeListener(new ChangeListener() {
 
@@ -215,32 +213,32 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		sub_panel_Time_Menu.add(positionTimeSlider);
-		JLabel lblTimePlaying = new JLabel("Time playing");
-		sub_panel_Time_Menu.add(lblTimePlaying);
+		subPanelControlMenu.add(positionTimeSlider);
+		JLabel timePLayingLabel = new JLabel("Time playing");
+		subPanelControlMenu.add(timePLayingLabel);
 
 		Component verticalStrut = Box.createVerticalStrut(20);
-		Time_mouse_event_panel.add(verticalStrut);
+		mouseEventPanelControlMenu.add(verticalStrut);
 
-		JPanel Audio_mouse_event_panel = new JPanel();
-		Audio_mouse_event_panel.setOpaque(false);
-		videoPlayerTab.add(Audio_mouse_event_panel, BorderLayout.EAST);
-		Audio_mouse_event_panel.addMouseListener(new MouseAdapter() {
+		JPanel mouseEventPanelAudioMenu = new JPanel();
+		mouseEventPanelAudioMenu.setOpaque(false);
+		videoPlayerTab.add(mouseEventPanelAudioMenu, BorderLayout.EAST);
+		mouseEventPanelAudioMenu.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				sub_panel_Audio_Menu.setVisible(true);
-				sub_panel_Audio_Menu.repaint();
+				subPanelAudioMenu.setVisible(true);
+				subPanelAudioMenu.repaint();
 				// System.out.println("Mouse entered the sub_panel_Audio_Menu");
 			}
 		});
 
 		Component horizontalStrut = Box.createHorizontalStrut(20);
-		Audio_mouse_event_panel.add(horizontalStrut);
+		mouseEventPanelAudioMenu.add(horizontalStrut);
 
-		sub_panel_Audio_Menu = new JPanel();
-		Audio_mouse_event_panel.add(sub_panel_Audio_Menu);
-		sub_panel_Audio_Menu.setOpaque(false);
-		sub_panel_Audio_Menu.setVisible(false);
+		subPanelAudioMenu = new JPanel();
+		mouseEventPanelAudioMenu.add(subPanelAudioMenu);
+		subPanelAudioMenu.setOpaque(false);
+		subPanelAudioMenu.setVisible(false);
 
 		JSlider audioSlider = new JSlider();
 		audioSlider.setMaximum(100);
@@ -259,8 +257,8 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		sub_panel_Audio_Menu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		sub_panel_Audio_Menu.add(audioSlider);
+		subPanelAudioMenu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		subPanelAudioMenu.add(audioSlider);
 
 		this.setPreferredSize(new Dimension(800, 600));
 		this.pack();// makes sure everything is displayable.
