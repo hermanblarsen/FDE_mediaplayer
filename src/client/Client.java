@@ -36,21 +36,26 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
 
 import com.sun.jna.*;
+import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.layout.ColumnSpec;
+import com.jgoodies.forms.layout.RowSpec;
+import com.jgoodies.forms.layout.FormSpecs;
 
 public class Client extends JFrame {
 
-	private List<VideoFile> videoList;
+	
 	protected Socket serverSocket;
-	private ObjectInputStream inputFromServer;
-	private ObjectOutputStream outputToServer;
-	private int port = 1337;
+	private int communicationPort = 1337;
 	private int streamPort;
 	private String host = "127.0.0.1";
+	private ObjectInputStream inputFromServer;
+	private ObjectOutputStream outputToServer;
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
 
 	private PlayerControlsPanel controlPanel;
 	private EmbeddedMediaPlayer mediaPlayer;
 
+	private List<VideoFile> videoList;
 	private JPanel contentPane;
 	protected JComboBox<String> selectionBox;
 	protected JPanel subPanelControlMenu;
@@ -63,6 +68,8 @@ public class Client extends JFrame {
 	private long mediaLength;
 	private JTextField userNameField;
 	private JPasswordField passwordField;
+	private JTable listTable;
+	private JTextField searchField;
 
 	/**
 	 * Launch the application.
@@ -114,15 +121,40 @@ public class Client extends JFrame {
 
 		listViewTab = new JPanel();
 		tabbedPane.addTab("Video List", null, listViewTab, "Browse videos to watch");
-		listViewTab.setLayout(null);
-
-		selectionBox = new JComboBox<String>();
-		selectionBox.setBounds(40, 80, 360, 30);
+		listViewTab.setLayout(new BorderLayout(0, 0));
+		
+		JPanel listViewNorthPanel = new JPanel();
+		listViewTab.add(listViewNorthPanel, BorderLayout.NORTH);
+		listViewNorthPanel.setLayout(new BorderLayout(0, 0));
+		
+		searchField = new JTextField();
+		listViewNorthPanel.add(searchField, BorderLayout.CENTER);
+		searchField.setColumns(10);
+		
+		JButton searchButton = new JButton("Search");
+		searchButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("SCREAM AND SHOUT!");
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		listViewNorthPanel.add(searchButton, BorderLayout.EAST);
+		
+		JPanel listViewWestPanel = new JPanel();
+		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
+		listViewWestPanel.setLayout(new BorderLayout(0, 0));
+		
+		//selectionBox = new JComboBox<String>();
+		//selectionBox.setBounds(40, 80, 360, 30);
 		// Temporary solution to select a video from the video list
-		listViewTab.add(selectionBox);
+		//listViewTab.add(selectionBox);
 
 		// TEMP PLAY BUTTON
 		JButton playButton = new JButton("PLAY");
+		listViewWestPanel.add(playButton, BorderLayout.NORTH);
 		playButton.setBounds(415, 81, 115, 29);
 		playButton.addActionListener(new ActionListener() {
 			@Override
@@ -139,41 +171,46 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		listViewTab.add(playButton);
+		
+		
+		
+		listTable = new JTable();
+		listTable.setShowGrid(false);
+		listViewTab.add(listTable, BorderLayout.CENTER);
 		contentPane.add(tabbedPane);
 
 		
-			settingsTab = new JPanel();
-			settingsTab.setToolTipText("");
-			tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
-			settingsTab.setLayout(null);
-			
-			JLabel lblUsername = new JLabel("Username:");
-			lblUsername.setBounds(0, 16, 87, 32);
-			settingsTab.add(lblUsername);
-			
-			userNameField = new JTextField();
-			userNameField.setBounds(102, 19, 146, 26);
-			settingsTab.add(userNameField);
-			userNameField.setColumns(10);
-			
-			JLabel lblPassword = new JLabel("Password:");
-			lblPassword.setBounds(0, 64, 87, 20);
-			settingsTab.add(lblPassword);
-			
-			passwordField = new JPasswordField();
-			passwordField.setBounds(102, 61, 146, 26);
-			settingsTab.add(passwordField);
-			
-			JButton btnLogin = new JButton("Login");
-			btnLogin.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					login();
-				}
-			});
-			btnLogin.setBounds(0, 103, 248, 29);
-			settingsTab.add(btnLogin);
+		settingsTab = new JPanel();
+		settingsTab.setToolTipText("");
+		tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
+		settingsTab.setLayout(null);
+		
+		JLabel lblUsername = new JLabel("Username:");
+		lblUsername.setBounds(0, 16, 87, 32);
+		settingsTab.add(lblUsername);
+		
+		userNameField = new JTextField();
+		userNameField.setBounds(102, 19, 146, 26);
+		settingsTab.add(userNameField);
+		userNameField.setColumns(10);
+		
+		JLabel lblPassword = new JLabel("Password:");
+		lblPassword.setBounds(0, 64, 87, 20);
+		settingsTab.add(lblPassword);
+		
+		passwordField = new JPasswordField();
+		passwordField.setBounds(102, 61, 146, 26);
+		settingsTab.add(passwordField);
+		
+		JButton btnLogin = new JButton("Login");
+		btnLogin.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				login();
+			}
+		});
+		btnLogin.setBounds(0, 103, 248, 29);
+		settingsTab.add(btnLogin);
 		
 
 		/////////////////////////////////////////////////////////////////////////////////////////////
@@ -245,6 +282,8 @@ public class Client extends JFrame {
 				}
 			}
 		});
+		
+		
 		subPanelControlMenu.add(positionTimeSlider);
 		JLabel timePLayingLabel = new JLabel("Time playing");
 		subPanelControlMenu.add(timePLayingLabel);
@@ -291,6 +330,18 @@ public class Client extends JFrame {
 		});
 		subPanelAudioMenu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		subPanelAudioMenu.add(audioSlider);
+		
+		JPanel statusPanel = new JPanel();
+		contentPane.add(statusPanel, BorderLayout.SOUTH);
+		statusPanel.setLayout(new BorderLayout(0, 0));
+		
+		JLabel statusBar = new JLabel("Status:");
+		statusBar.setToolTipText("Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
+		statusPanel.add(statusBar, BorderLayout.WEST);
+		
+		JTextPane textPane = new JTextPane();
+		textPane.setEditable(false);
+		statusPanel.add(textPane, BorderLayout.CENTER);
 
 		this.setPreferredSize(new Dimension(800, 600));
 		this.pack();// makes sure everything is displayable.
@@ -304,7 +355,7 @@ public class Client extends JFrame {
 	 * Connects to the default host:port
 	 */
 	public void connectToTheServer() {
-		connectToTheServer(this.host, this.port);
+		connectToTheServer(this.host, this.communicationPort);
 	}
 
 	public void connectToTheServer(String host, int port) {
@@ -355,11 +406,11 @@ public class Client extends JFrame {
 																				// status
 																				// bar
 		// get the video list from the server
-		readVideoListFromServer();
+		getVideoListFromServer();
 		
 	}
 
-	private void readVideoListFromServer() {
+	private void getVideoListFromServer() {
 		try {
 			// tell the server to send the videolist
 			send("GETLIST");

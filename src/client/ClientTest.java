@@ -46,24 +46,6 @@ public class ClientTest {
 		assertEquals("Prometheus", comboBox.getSelectedItem());
 	}
 	
-	//Unnecessary, see combined test case below*2
-	/*@Test 
-	public void verifyErrorNoVideosAvailable() {
-		XMLReader reader = new XMLReader();
-		List<VideoFile> videoListEmpty = reader.getList("testLists/videoListEmpty.xml");
-		this.testClient.setVideoList(videoListEmpty);
-		this.testClient.validateVideoListContentsAndFormat();
-		assertNotNull(this.testClient.errorOptionPane);
-	}
-	//Unnecessary, see combined test case below
-	@Test
-	public void verifyCorrectListFormat(){
-		XMLReader reader = new XMLReader();
-		List<VideoFile> videoListInvalid = reader.getList("testLists/videoListInvalid.xml");
-		testClient.setVideoList(videoListInvalid);
-		assertFalse(testClient.validateVideoListContentsAndFormat());
-	}*/
-	
 	@Test
 	public void verifyErrorListContentOrFormat() {
 		XMLReader reader = new XMLReader();
