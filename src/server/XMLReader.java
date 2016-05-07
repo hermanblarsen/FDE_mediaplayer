@@ -66,7 +66,6 @@ public class XMLReader extends DefaultHandler{
             	currentVideofile.setID(attributeValue);
                 break;
             default:
-                // TODO no action appears necessary
                 break;
             }
         }
@@ -85,7 +84,6 @@ public class XMLReader extends DefaultHandler{
         	currentVideofile.setFilename(newContent);
             break;
         default:
-            // TODO no action appears necessary
             break;
         }
 	}
@@ -111,12 +109,7 @@ public class XMLReader extends DefaultHandler{
 	
 	@Override
 	public void endDocument() throws SAXException {
-		
-		System.out.println("Finished parsing, stored " + videoList.size() + ":" );
-        for (VideoFile thisvideo : videoList) {
-            System.out.println("ID: " + thisvideo.getID() + ", Title: " + thisvideo.getTitle() 
-            		+ ", Filename: " + thisvideo.getFilename());
-        }
+		//No action appears necessary
 	}
 
 	
