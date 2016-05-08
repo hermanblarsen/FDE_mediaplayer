@@ -116,7 +116,8 @@ public class ClientConnection implements Runnable {
 				}else if (userInput.equals("COMMENT")){
 					String videoID = (String) read();
 					String comment = (String) read();
-					for(VideoFile video : getVideoList()){
+					ArrayList<VideoFile> videoList = (ArrayList<VideoFile>) getVideoList();
+					for(VideoFile video : videoList){
 						if (video.getID().equals(videoID)) {
 							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
 							commentsList.add(comment);
@@ -124,6 +125,8 @@ public class ClientConnection implements Runnable {
 							break;
 						}
 					}
+					videoListParser parser = new videoListParser(xmlListDatapath);
+					parser.writeVideoList(videoList);
 				} else if (userInput.equals("CLOSECONNECTION")) {
 					if (this.mediaPlayerFactory != null) {
 						this.connectedClientSocket.close();
