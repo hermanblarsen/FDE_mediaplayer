@@ -57,6 +57,7 @@ public class Client extends JFrame {
 	private PlayerControlsPanel controlPanel;
 	private EmbeddedMediaPlayer mediaPlayer;
 
+	private Client thisClient = this;
 	private List<VideoFile> videoList;
 	private JPanel contentPane;
 	protected JComboBox<String> selectionBox;
@@ -159,6 +160,18 @@ public class Client extends JFrame {
 		
 		
 		JButton btnComment = new JButton("Comment");
+		btnComment.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String videoID= "";//= (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				for(VideoFile eachVideo : videoList) {
+					if(listTable.getValueAt(listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
+						videoID = eachVideo.getID();
+					}
+				}
+				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient , user);
+				
+			}
+		});
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
 		
 		JButton playButton = new JButton("PLAY");
@@ -596,7 +609,7 @@ public class Client extends JFrame {
 	private void sendSelectedVideo() {
 		for(VideoFile eachVideo : this.videoList) {
 			if(this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
-			send(eachVideo.getID());
+				send(eachVideo.getID());
 			}
 		}
 	}

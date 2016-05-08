@@ -24,6 +24,7 @@ public class ClientConnection implements Runnable {
 	private String streamingOptions;
 	private List<UserAccount> userList = new ArrayList<UserAccount>();
 	private Boolean clientIsConnected;
+	private List<VideoFile> videoList = new ArrayList<VideoFile>();
 	//variables for the media player
 
 	private MediaPlayerFactory mediaPlayerFactory;
@@ -107,7 +108,8 @@ public class ClientConnection implements Runnable {
 					mediaPlayer.setPosition(videoPosition);
 				}else if (userInput.equals("GET VIDEO COMMENTS")){
 					String videoID = (String) read();
-					for(VideoFile video : getVideoList()){
+					getVideoList();
+					for(VideoFile video : videoList){
 						if (video.getID().equals(videoID)) {
 							send(video.getPublicCommentsList());
 							break;
@@ -116,7 +118,7 @@ public class ClientConnection implements Runnable {
 				}else if (userInput.equals("COMMENT")){
 					String videoID = (String) read();
 					String comment = (String) read();
-					ArrayList<VideoFile> videoList = (ArrayList<VideoFile>) getVideoList();
+					getVideoList();
 					for(VideoFile video : videoList){
 						if (video.getID().equals(videoID)) {
 							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
@@ -165,22 +167,24 @@ public class ClientConnection implements Runnable {
 
 	/**
 	 * Reads the xml video list
+	 * @return 
 	 * 
 	 * @return
 	 */
-	protected List<VideoFile> getVideoList() {
-		return this.getVideoList(this.xmlListDatapath);
+	protected void getVideoList() {
+		getVideoList(this.xmlListDatapath);
 	}
 
 	// Used for testing when other lists are used and checked.
-	protected List<VideoFile> getVideoList(String fileLocation) {
+	protected void getVideoList(String fileLocation) {
 		videoListParser reader = new videoListParser(fileLocation);
-		List<VideoFile> videoList = reader.parseVideoList();
-		return videoList;
+		List<VideoFile> tempvideoList = reader.parseVideoList();
+		this.videoList = tempvideoList;
 	}
 
 	public void sendVideoListToClient() {
-		send(getVideoList());
+		getVideoList();
+		send(this.videoList);
 	}
 
 	private void setUpMediaStream(String desiredVideoID) {
@@ -206,7 +210,8 @@ public class ClientConnection implements Runnable {
 	}
 
 	protected String getVideoNameFromID(String videoID) {
-		for (VideoFile video : getVideoList()) {
+		getVideoList();
+		for (VideoFile video : videoList) {
 			if (video.getID().equals(videoID)) {
 				return video.getFilename();
 			}
