@@ -154,6 +154,9 @@ public class Client extends JFrame {
 		listTable.setShowGrid(false);
 		listScrollPanel.setViewportView(listTable);
 		
+		JButton btnComment = new JButton("Comment");
+		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
+		
 		JButton playButton = new JButton("PLAY");
 		listViewWestPanel.add(playButton, BorderLayout.CENTER);
 		playButton.addActionListener(new ActionListener() {
