@@ -39,6 +39,7 @@ import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
 import com.sun.jna.*;
 import java.awt.TextArea;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 public class Client extends JFrame {
 	
@@ -73,8 +74,8 @@ public class Client extends JFrame {
 	private JButton btnLogin ;
 	private JPanel statusPanel;
 	private JTextPane textPane;
-	private JTable table;
 	private JTable listTable;
+	private VideoTableModel listVideoTableModel;
 	/**
 	 * Launch the application.
 	 */
@@ -150,9 +151,12 @@ public class Client extends JFrame {
 		JScrollPane listScrollPanel = new JScrollPane();
 		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
 		
-		listTable = new JTable(new VideoTableModel());
+		listVideoTableModel = new VideoTableModel();
+		listTable = new JTable(listVideoTableModel);
 		listTable.setShowGrid(false);
+		//listTable.getTableHeader().setEnabled(false);
 		listScrollPanel.setViewportView(listTable);
+		
 		
 		JButton btnComment = new JButton("Comment");
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
@@ -404,7 +408,8 @@ public class Client extends JFrame {
 			// tell the server to send the videolist
 			send("GETLIST");
 			try {
-				videoList = (List<VideoFile>) inputFromServer.readObject();
+				this.videoList = (List<VideoFile>) inputFromServer.readObject();
+				System.out.println("VIDEOLIST IS FUCKIGN HERRE!");
 			} catch (ClassCastException e) {
 				writeStatus(new String("Could not cast input object stream to videoList"), Color.RED); 
 				e.printStackTrace();
@@ -417,7 +422,7 @@ public class Client extends JFrame {
 			e.printStackTrace();
 		}
 		writeStatus(new String("Reading video list complete."), Color.GREEN);
-		updateListTable();
+		updateVideoList();
 		validateVideoListContentsAndFormat();
 	}
 
@@ -445,14 +450,6 @@ public class Client extends JFrame {
 			e.printStackTrace();
 		}
 		return obj;
-	}
-
-	// refreshes all GUI elements.
-	private void updateListTable() {
-		for (VideoFile video : videoList) {
-			//selectionBox.addItem(video.getTitle()); //TODO add each video to table!
-		}
-		this.validate();
 	}
 
 	// closes all sockets to make sure that they can be used again if the client
@@ -560,9 +557,8 @@ public class Client extends JFrame {
 			getVideoListFromServer();			
 			setUpMediaPLayer();
 			requestMovieStream();
-			
-			//updateListTable();	//TODO must be redone
 			updateVideoList();
+			
 			
 			//enable and switch to the other tabs.
 			tabbedPane.setEnabledAt(0, true);
@@ -576,29 +572,32 @@ public class Client extends JFrame {
 			passwordField.setBackground(Color.RED);
 			writeStatus("LOGIN FAILED", Color.RED);
 		}
-		
 	}
 	
 	public void updateVideoList() {
+		//this.listVideoTableModel = new VideoTableModel(this.videoList.size());
+		//this.listTable = new JTable(this.listVideoTableModel);
+		
 		int rowCounter = 0;
 		for(VideoFile eachVideo : this.videoList) {
 			int columnCounter = 0;
-			//for (int columnCounter = 0; columnCounter > this.listTable.getColumnCount(); columnCounter++) {
 			this.listTable.setValueAt(eachVideo.getTitle(), rowCounter, columnCounter);
 			columnCounter++;
 			this.listTable.setValueAt(eachVideo.getDurationInSeconds(), rowCounter, columnCounter);
 			columnCounter++;
 			this.listTable.setValueAt(eachVideo.getIsFavourite(), rowCounter, columnCounter);
-			//}
 			rowCounter++;	
 		}
-		this.listTable.
+		
+		this.listTable.updateUI();		
 		validate();
+		
 	}
 	private void sendSelectedVideo() {
 		for(VideoFile eachVideo : this.videoList) {
-			if(this.listTable.getValueAt(this.listTable.getSelectedRow(), this.listTable.getSelectedColumn()).equals(eachVideo.getTitle()));
+			if(this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
 			send(eachVideo.getID());
+			}
 		}
 	}
 }

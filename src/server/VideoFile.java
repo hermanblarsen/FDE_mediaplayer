@@ -78,6 +78,4 @@ public class VideoFile implements Serializable {
 	public void setPublicCommentsList(List<String> publicCommentsList) {
 		this.publicCommentsList = publicCommentsList;
 	}
-	
-	
 }
