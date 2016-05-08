@@ -69,12 +69,12 @@ public class ClientTest {
 		assertNotNull(this.testClient.errorOptionPane);
 	}
 	
-	@Test
+	/*@Test
 	public void verifyClientLoginworks(){
 		Boolean loginStatus = testClient.login("TestUser","password");
 		assertTrue(loginStatus);
 		
 		loginStatus = testClient.login("TestUser","wrongPassword");
 		assertFalse(loginStatus);
-	}
+	}*/
 }

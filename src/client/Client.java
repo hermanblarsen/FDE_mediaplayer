@@ -142,6 +142,11 @@ public class Client extends JFrame {
 		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
 		listViewWestPanel.setLayout(new BorderLayout(0, 0));
 		
+		listTable = new JTable(new VideoTableModel(this.videoList));
+		listTable.setShowGrid(false);
+		listViewTab.add(listTable, BorderLayout.CENTER);
+		contentPane.add(tabbedPane);
+	
 		JButton playButton = new JButton("PLAY");
 		listViewWestPanel.add(playButton, BorderLayout.NORTH);
 		playButton.setBounds(415, 81, 115, 29);
@@ -160,14 +165,6 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		
-		
-		
-		listTable = new JTable();
-		listTable.setShowGrid(false);
-		listViewTab.add(listTable, BorderLayout.CENTER);
-		contentPane.add(tabbedPane);
-
 		
 		settingsTab = new JPanel();
 		settingsTab.setToolTipText("");
@@ -234,7 +231,7 @@ public class Client extends JFrame {
 		subPanelControlMenu = new JPanel();
 		subPanelControlMenu.setVisible(false);
 		mouseEventPanelControlMenu.add(subPanelControlMenu);
-		JButton playPauseButton = new JButton("Play/Pause");
+		JButton playPauseButton = new JButton("Play");
 		playPauseButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -252,8 +249,11 @@ public class Client extends JFrame {
 		});
 
 		subPanelControlMenu.add(playPauseButton);
-		JLabel timeRemainingLabel = new JLabel("Time Remaining");
-		subPanelControlMenu.add(timeRemainingLabel);
+		
+		JButton stopButton = new JButton("Stop");
+		subPanelControlMenu.add(stopButton);
+		JLabel timePlayingLabel = new JLabel("Time Remaining");
+		subPanelControlMenu.add(timePlayingLabel);
 		JSlider positionTimeSlider = new JSlider(0, 100);
 		positionTimeSlider.addChangeListener(new ChangeListener() {
 
@@ -275,8 +275,15 @@ public class Client extends JFrame {
 		
 		
 		subPanelControlMenu.add(positionTimeSlider);
-		JLabel timePLayingLabel = new JLabel("Time playing");
-		subPanelControlMenu.add(timePLayingLabel);
+		JLabel durationOfMovie = new JLabel("Time playing");
+		subPanelControlMenu.add(durationOfMovie);
+		
+		JButton fullscreenButton = new JButton("Fullscreen");
+		fullscreenButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+			}
+		});
+		subPanelControlMenu.add(fullscreenButton);
 
 		Component verticalStrut = Box.createVerticalStrut(20);
 		mouseEventPanelControlMenu.add(verticalStrut);
@@ -307,7 +314,6 @@ public class Client extends JFrame {
 		audioSlider.setValue(50);
 		audioSlider.setOrientation(SwingConstants.VERTICAL);
 		audioSlider.addChangeListener(new ChangeListener() {
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				JSlider sliderTemp = (JSlider) e.getSource();
@@ -390,7 +396,7 @@ public class Client extends JFrame {
 			e.printStackTrace();
 		}
 		writeStatus(new String("Reading video list complete."), Color.GREEN);
-		updateClientWindow();
+		updateListTable();
 		validateVideoListContentsAndFormat();
 	}
 
@@ -421,7 +427,7 @@ public class Client extends JFrame {
 	}
 
 	// refreshes all GUI elements.
-	private void updateClientWindow() {
+	private void updateListTable() {
 		for (VideoFile video : videoList) {
 			//selectionBox.addItem(video.getTitle()); //TODO add each video to table!
 		}
