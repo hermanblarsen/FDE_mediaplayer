@@ -49,25 +49,25 @@ public class ClientConnection implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		String input ="";
+		String userInput ="";
 		//Read user list
 		userListXMLreader reader = new userListXMLreader();
 		userList = reader.parseUserAccountList();
 		//Attempt login
-		Boolean loggedin = false;
-		while(true){
+		Boolean isLoggedIn = false;
+		while(!isLoggedIn){
 			try {
-				input = (String) read();
-				String pass = input;
-				input = (String) read();
-				pass += input;
+				userInput = (String) read();
+				String password = userInput;
+				userInput = (String) read();
+				password += userInput;
 				
 				for(UserAccount user : userList){
 					//check for user name
-					if((user.getUserNameID()+ user.getPassword()).equals(pass)){
+					if((user.getUserNameID()+ user.getPassword()).equals(password)){
 						System.out.println("LOGIN SUCCEDED");
 						send("LOGIN SUCCEDED");
-						loggedin = true;
+						isLoggedIn = true;
 						//sending user account data to client
 						send(user);
 						break;
@@ -76,40 +76,41 @@ public class ClientConnection implements Runnable {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (loggedin) {
-				break;
+			if (!isLoggedIn) {
+				System.out.println("LOGIN FAILED");
+				send("LOGIN FAILED");
 			}
-			System.out.println("LOGIN FAILED");
-			send("LOGIN FAILED");
 		}
 		while(clientIsConnected){
 			try {
 
-				input = (String) read();
-				System.out.println("Message recieved from client: " + input);
+				userInput = (String) read();
+				System.out.println("Message recieved from client: " + userInput);
 
-				if (input == null) {
+				if (userInput == null) {
 					continue;
-				} else if (input.equals("GETLIST")) {
+				} else if (userInput.equals("GETLIST")) {
 					sendVideoListToClient();
-				} else if (input.equals("STREAM")) {
+				} else if (userInput.equals("STREAM")) {
 					String videoID = "";
 					videoID = (String) read();
 					setUpMediaStream(videoID);
-				} else if (input.equals("STOPSTREAM")) {
+				} else if (userInput.equals("STOPSTREAM")) {
 					stopStream();
-				} else if (input.equals("CLOSE")) {
+				} else if (userInput.equals("CLOSE")) {
 					break;
-				} else if (input.equals("STREAMPORT")) {
+				} else if (userInput.equals("STREAMPORT")) {
 					send(this.streamPort);
-				} else if (input.equals("SKIP")) {
+				} else if (userInput.equals("SKIP")) {
 					float videoPosition = 0;
 					videoPosition = (float) read();
 					mediaPlayer.setPosition(videoPosition);
-				} else if (input.equals("CLOSECONNECTION")) {
-					this.connectedClientSocket.close();
-					this.mediaPlayer.release();
-					this.mediaPlayerFactory.release();
+				} else if (userInput.equals("CLOSECONNECTION")) {
+					if (this.mediaPlayerFactory != null) {
+						this.connectedClientSocket.close();
+						this.mediaPlayer.release();
+						this.mediaPlayerFactory.release();
+					}
 					this.clientIsConnected = false;
 				} else {
 					// No action appears necessary
@@ -174,10 +175,10 @@ public class ClientConnection implements Runnable {
 	 * Tests if a stream is running and stops it if it is running.
 	 */
 	private void stopStream() {
-		if (mediaPlayerFactory != null) {
-			mediaPlayer.stop();
-			mediaPlayer.release();
-			mediaPlayerFactory.release();
+		if (this.mediaPlayerFactory != null) {
+			this.mediaPlayer.stop();
+			this.mediaPlayer.release();
+			this.mediaPlayerFactory.release();
 		}
 	}
 
