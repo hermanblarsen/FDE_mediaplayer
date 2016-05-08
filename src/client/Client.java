@@ -155,6 +155,13 @@ public class Client extends JFrame {
 		listScrollPanel.setViewportView(listTable);
 		
 		JButton btnComment = new JButton("Comment");
+		Client tempthis = this;
+		btnComment.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				String videoID = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				CommentWindow window = new CommentWindow(videoID, tempthis , user);
+			}
+		});
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
 		
 		JButton playButton = new JButton("PLAY");

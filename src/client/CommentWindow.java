@@ -20,12 +20,12 @@ public class CommentWindow extends JFrame{
 	private JTextPane commentsPane;
 	private JTextPane commentPane;
 	private JButton btnComment;
-	private VideoFile video;
+	private String video;
 	private Client client;
 	private UserAccount user;
 	private List<String> comments = new ArrayList<String>();
 
-	public CommentWindow(VideoFile video,Client client,UserAccount user){
+	public CommentWindow(String video,Client client,UserAccount user){
 		
 		this.client = client;
 		this.video = video;
@@ -39,7 +39,7 @@ public class CommentWindow extends JFrame{
 				//test that comment box is not empty
 				if(commentPane.getText().length() >= 1){
 					client.send("COMMENT");
-					client.send(video.getID());
+					client.send(video);
 					client.send("["+user.getUserNameID()+"]: " +commentPane.getText());
 				}
 			}
@@ -63,7 +63,7 @@ public class CommentWindow extends JFrame{
 
 	private void getVideoComments() {
 		client.send("GET VIDEO COMMENTS");
-		client.send(video.getID());
+		client.send(video);
 		comments = (ArrayList<String>)client.read();
 		String text = "";
 		for (String comment : comments) {

@@ -65,15 +65,12 @@ public class videoListParser {
 						break;
 					case "comments":
 						//getting all the comment nodes
-						ArrayList<String> tempcommentList = (ArrayList<String>) video.getPublicCommentsList();
+						ArrayList<String> tempcommentList = new ArrayList<String>();
 						NodeList commentList = subElement.getChildNodes();
 						for (int k = 0; k < commentList.getLength(); k++) {
 							if(commentList.item(k).getNodeType() == Node.ELEMENT_NODE){
 								String comment = ((Element) commentList.item(k)).getTextContent();
-								try {
-									tempcommentList.add(comment);
-								} catch (Exception e) {
-								}
+								tempcommentList.add(comment);
 							}
 						}
 						video.setPublicCommentsList(tempcommentList);
@@ -88,7 +85,7 @@ public class videoListParser {
 		return videoList;
 	}
 	
-	public void writeVideoList(ArrayList<VideoFile> videoList){
+	public void writeVideoList(List<VideoFile> videoList){
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		try {
 			DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
