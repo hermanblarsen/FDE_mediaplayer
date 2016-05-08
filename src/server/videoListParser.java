@@ -70,7 +70,11 @@ public class videoListParser {
 						for (int k = 0; k < commentList.getLength(); k++) {
 							if(commentList.item(k).getNodeType() == Node.ELEMENT_NODE){
 								String comment = ((Element) commentList.item(k)).getTextContent();
-								tempcommentList.add(comment);
+								try {
+									tempcommentList.add(comment);
+								} catch (Exception e) {
+									
+								}
 							}
 						}
 						video.setPublicCommentsList(tempcommentList);

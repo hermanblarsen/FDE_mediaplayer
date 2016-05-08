@@ -109,7 +109,7 @@ public class Client extends JFrame {
 	private void setupGUI() {
 		// Setup a JFrame and a JPanel contentsPane
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 600, 400);
+		setBounds(100, 100, 954, 674);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -153,6 +153,14 @@ public class Client extends JFrame {
 		listTable = new JTable(new VideoTableModel());
 		listTable.setShowGrid(false);
 		listScrollPanel.setViewportView(listTable);
+		
+		JButton btnComment = new JButton("Comment");
+		btnComment.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				//CommentWindow window = new CommentWindow(video, this, this.user)
+			}
+		});
+		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
 		
 		JButton playButton = new JButton("PLAY");
 		listViewWestPanel.add(playButton, BorderLayout.CENTER);
