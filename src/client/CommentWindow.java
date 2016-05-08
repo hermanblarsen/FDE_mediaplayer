@@ -38,9 +38,9 @@ public class CommentWindow extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				//test that comment box is not empty
 				if(commentPane.getText().length() >= 1){
-					client.send("COMMENT");
-					client.send(video.getID());
-					client.send("["+user.getUserNameID()+"]: " +commentPane.getText());
+					this.client.send("COMMENT");
+					this.client.send(video.getID());
+					this.client.send("["+user.getUserNameID()+"]: " +commentPane.getText());
 				}
 			}
 			

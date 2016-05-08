@@ -9,16 +9,12 @@ public class VideoFile implements Serializable {
 	private String ID;
 	private String title;
 	private String filename;
-	private int durationInSeconds=180;
-	private int publicRating;
-	private List<String> publicCommentsList = new ArrayList<String>(); 
+	private Boolean isFavourite;
+	private int durationInSeconds;
+	protected int publicRating;
+	protected List<String> publicCommentsList; 
+
 	
-	public List<String> getPublicCommentsList() {
-		return publicCommentsList;
-	}
-	public void setPublicCommentsList(List<String> publicCommentsList) {
-		this.publicCommentsList = publicCommentsList;
-	}
 	/**
 	 * @return the iD
 	 */
@@ -55,4 +51,33 @@ public class VideoFile implements Serializable {
 	public void setFilename(String filename) {
 		this.filename = filename;
 	}
+	
+	public Boolean getIsFavourite() {
+		//return isFavourite;
+		return false;
+	}
+	public void setIsFavourite(Boolean isFavourite) {
+		this.isFavourite = isFavourite;
+	}
+	public int getDurationInSeconds() {
+		//return durationInSeconds;
+		return 180;
+	}
+	public void setDurationInSeconds(int durationInSeconds) {
+		this.durationInSeconds = durationInSeconds;
+	}
+	public int getPublicRating() {
+		return publicRating;
+	}
+	public void setPublicRating(int publicRating) {
+		this.publicRating = publicRating;
+	}
+	public List<String> getPublicCommentsList() {
+		return publicCommentsList;
+	}
+	public void setPublicCommentsList(List<String> publicCommentsList) {
+		this.publicCommentsList = publicCommentsList;
+	}
+	
+	
 }
