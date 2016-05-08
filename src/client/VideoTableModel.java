@@ -21,7 +21,9 @@ public class VideoTableModel extends AbstractTableModel {
 
 	public VideoTableModel(List<VideoFile> videoList) {
 		this.videoList = videoList;
-		//Generate the tableData here?
+		for(VideoFile eachVideo : this.videoList){
+				//Generate the tableData here
+		}
 	}
 
 	@Override
