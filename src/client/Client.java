@@ -134,7 +134,6 @@ public class Client extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("SCREAM AND SHOUT!");
 				// TODO Update the list to display titles containing the search string
 				
 			}
@@ -161,7 +160,7 @@ public class Client extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				send("STREAM");
-				send(videoList.get(selectionBox.getSelectedIndex()).getID());
+				sendSelectedVideo();
 				tabbedPane.setSelectedIndex(2);
 				try {
 					mediaLength = (long) inputFromServer.readObject();
@@ -178,9 +177,9 @@ public class Client extends JFrame {
 		tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
 		settingsTab.setLayout(null);
 		
-		JLabel lblUsername = new JLabel("Username:");
-		lblUsername.setBounds(0, 16, 87, 32);
-		settingsTab.add(lblUsername);
+		JLabel userNameLabel = new JLabel("Username:");
+		userNameLabel.setBounds(0, 16, 87, 32);
+		settingsTab.add(userNameLabel);
 		
 		userNameField = new JTextField();
 		userNameField.setBounds(102, 19, 146, 26);
@@ -559,7 +558,8 @@ public class Client extends JFrame {
 			setUpMediaPLayer();
 			requestMovieStream();
 			
-			updateListTable();	//TODO must be redone
+			//updateListTable();	//TODO must be redone
+			updateVideoList();
 			
 			//enable and switch to the other tabs.
 			tabbedPane.setEnabledAt(0, true);
@@ -574,5 +574,28 @@ public class Client extends JFrame {
 			writeStatus("LOGIN FAILED", Color.RED);
 		}
 		
+	}
+	
+	public void updateVideoList() {
+		int rowCounter = 0;
+		for(VideoFile eachVideo : this.videoList) {
+			int columnCounter = 0;
+			//for (int columnCounter = 0; columnCounter > this.listTable.getColumnCount(); columnCounter++) {
+			this.listTable.setValueAt(eachVideo.getTitle(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(eachVideo.getDurationInSeconds(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(eachVideo.getIsFavourite(), rowCounter, columnCounter);
+			//}
+			rowCounter++;	
+		}
+		this.listTable.
+		validate();
+	}
+	private void sendSelectedVideo() {
+		for(VideoFile eachVideo : this.videoList) {
+			if(this.listTable.getValueAt(this.listTable.getSelectedRow(), this.listTable.getSelectedColumn()).equals(eachVideo.getTitle()));
+			send(eachVideo.getID());
+		}
 	}
 }
