@@ -12,5 +12,8 @@
 	<User id="UserName4">
         <password>Password4</password>
     </User>
+	<User id="">
+        <password></password>
+    </User>
 	
 </userList>

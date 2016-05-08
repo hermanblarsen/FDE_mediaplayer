@@ -106,9 +106,24 @@ public class ClientConnection implements Runnable {
 					videoPosition = (float) read();
 					mediaPlayer.setPosition(videoPosition);
 				}else if (userInput.equals("GET VIDEO COMMENTS")){
-					
+					String videoID = (String) read();
+					for(VideoFile video : getVideoList()){
+						if (video.getID().equals(videoID)) {
+							send(video.getPublicCommentsList());
+							break;
+						}
+					}
 				}else if (userInput.equals("COMMENT")){
-					
+					String videoID = (String) read();
+					String comment = (String) read();
+					for(VideoFile video : getVideoList()){
+						if (video.getID().equals(videoID)) {
+							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
+							commentsList.add(comment);
+							video.setPublicCommentsList(commentsList);
+							break;
+						}
+					}
 				} else if (userInput.equals("CLOSECONNECTION")) {
 					if (this.mediaPlayerFactory != null) {
 						this.connectedClientSocket.close();
@@ -156,8 +171,8 @@ public class ClientConnection implements Runnable {
 
 	// Used for testing when other lists are used and checked.
 	protected List<VideoFile> getVideoList(String fileLocation) {
-		XMLReader reader = new XMLReader();
-		List<VideoFile> videoList = reader.getList(fileLocation);
+		videoListParser reader = new videoListParser(fileLocation);
+		List<VideoFile> videoList = reader.parseVideoList();
 		return videoList;
 	}
 

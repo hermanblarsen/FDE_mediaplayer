@@ -1,6 +1,7 @@
 package src.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class VideoFile implements Serializable {
@@ -12,7 +13,7 @@ public class VideoFile implements Serializable {
 	private int durationInSeconds;
 	protected int publicRating;
 	protected List<String> publicCommentsList; 
-	
+
 	
 	/**
 	 * @return the iD
@@ -52,7 +53,8 @@ public class VideoFile implements Serializable {
 	}
 	
 	public Boolean getIsFavourite() {
-		return isFavourite;
+		//return isFavourite;
+		return false;
 	}
 	public void setIsFavourite(Boolean isFavourite) {
 		this.isFavourite = isFavourite;
