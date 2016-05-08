@@ -1,6 +1,7 @@
 package src.server;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class VideoFile implements Serializable {
@@ -10,9 +11,14 @@ public class VideoFile implements Serializable {
 	private String filename;
 	private int durationInSeconds=180;
 	private int publicRating;
-	private List<String> publicCommentsList; 
+	private List<String> publicCommentsList = new ArrayList<String>(); 
 	
-	
+	public List<String> getPublicCommentsList() {
+		return publicCommentsList;
+	}
+	public void setPublicCommentsList(List<String> publicCommentsList) {
+		this.publicCommentsList = publicCommentsList;
+	}
 	/**
 	 * @return the iD
 	 */

@@ -3,6 +3,10 @@
     <video id="20120213a2">
         <title>Monsters Inc.</title>
         <filename>monstersinc_high.mpg</filename>
+		<comments>
+			<comment>[UserName1]: asdfsdf</comment>
+			<comment>[UserName3]: asfffsdf</comment>
+		</comments>
     </video>
     <video id="20120102b7">
         <title>Avengers</title>
