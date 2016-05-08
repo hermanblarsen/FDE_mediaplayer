@@ -139,6 +139,12 @@ public class Client extends JFrame {
 		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
 		listViewWestPanel.setLayout(new BorderLayout(0, 0));
 		
+		
+		listTable = new JTable(new VideoTableModel(this.videoList));
+		listTable.setShowGrid(false);
+		listViewTab.add(listTable, BorderLayout.CENTER);
+		contentPane.add(tabbedPane);
+		
 		//selectionBox = new JComboBox<String>();
 		//selectionBox.setBounds(40, 80, 360, 30);
 		// Temporary solution to select a video from the video list
@@ -166,10 +172,7 @@ public class Client extends JFrame {
 		
 		
 		
-		listTable = new JTable();
-		listTable.setShowGrid(false);
-		listViewTab.add(listTable, BorderLayout.CENTER);
-		contentPane.add(tabbedPane);
+		
 
 		
 		settingsTab = new JPanel();
