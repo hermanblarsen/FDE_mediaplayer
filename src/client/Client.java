@@ -399,14 +399,14 @@ public class Client extends JFrame {
 	 * 
 	 * @param message
 	 */
-	private void send(Object object) {
+	public void send(Object object) {
 		try {
 			outputToServer.writeObject(object);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	private Object read(){
+	public Object read(){
 		Object obj = null;
 		try {
 			obj = inputFromServer.readObject();

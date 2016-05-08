@@ -106,7 +106,12 @@ public class ClientConnection implements Runnable {
 					float videoPosition = 0;
 					videoPosition = (float) read();
 					mediaPlayer.setPosition(videoPosition);
-				} else if (input.equals("CLOSECONNECTION")) {
+				}else if (input.equals("GET VIDEO COMMENTS")){
+					
+				}else if (input.equals("COMMENT")){
+					
+				}
+				else if (input.equals("CLOSECONNECTION")) {
 					this.connectedClientSocket.close();
 					this.mediaPlayer.release();
 					this.mediaPlayerFactory.release();
