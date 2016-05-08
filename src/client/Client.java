@@ -37,6 +37,8 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
 
 import com.sun.jna.*;
+import java.awt.TextArea;
+import javax.swing.table.TableModel;
 
 public class Client extends JFrame {
 	
@@ -67,11 +69,12 @@ public class Client extends JFrame {
 	private long mediaLength;
 	private JTextField userNameField;
 	private JPasswordField passwordField;
-	private JTable listTable;
 	private JTextField searchField;
 	private JButton btnLogin ;
 	private JPanel statusPanel;
 	private JTextPane textPane;
+	private JTable table;
+	private JTable listTable;
 	/**
 	 * Launch the application.
 	 */
@@ -132,7 +135,7 @@ public class Client extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("SCREAM AND SHOUT!");
-				// TODO Auto-generated method stub
+				// TODO Update the list to display titles containing the search string
 				
 			}
 		});
@@ -141,15 +144,19 @@ public class Client extends JFrame {
 		JPanel listViewWestPanel = new JPanel();
 		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
 		listViewWestPanel.setLayout(new BorderLayout(0, 0));
-		
-		listTable = new JTable(new VideoTableModel(this.videoList));
-		listTable.setShowGrid(false);
-		listViewTab.add(listTable, BorderLayout.CENTER);
 		contentPane.add(tabbedPane);
 	
+		
+		
+		JScrollPane listScrollPanel = new JScrollPane();
+		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
+		
+		listTable = new JTable(new VideoTableModel());
+		listTable.setShowGrid(false);
+		listScrollPanel.setViewportView(listTable);
+		
 		JButton playButton = new JButton("PLAY");
-		listViewWestPanel.add(playButton, BorderLayout.NORTH);
-		playButton.setBounds(415, 81, 115, 29);
+		listViewWestPanel.add(playButton, BorderLayout.CENTER);
 		playButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -252,6 +259,18 @@ public class Client extends JFrame {
 		
 		JButton stopButton = new JButton("Stop");
 		subPanelControlMenu.add(stopButton);
+		
+		JButton fullSkipBackButton = new JButton("<--");
+		subPanelControlMenu.add(fullSkipBackButton);
+		
+		JButton skipBackButton = new JButton("<-");
+		subPanelControlMenu.add(skipBackButton);
+		
+		JButton skipButton = new JButton("->");
+		subPanelControlMenu.add(skipButton);
+		
+		JButton fullSkipButton = new JButton("-->");
+		subPanelControlMenu.add(fullSkipButton);
 		JLabel timePlayingLabel = new JLabel("Time Remaining");
 		subPanelControlMenu.add(timePlayingLabel);
 		JSlider positionTimeSlider = new JSlider(0, 100);
@@ -525,18 +544,22 @@ public class Client extends JFrame {
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
 			userNameField.setBackground(Color.WHITE);
 			passwordField.setBackground(Color.WHITE);
+			
+			//disable login buttons and fields.
 			userNameField.setEnabled(false);
 			passwordField.setEnabled(false);
 			btnLogin.setEnabled(false);
 			this.validate();
+			
 			send("STREAMPORT");
 			this.streamPort = (int) read();
 			
 			// get the video list from the server
-			getVideoListFromServer();
+			getVideoListFromServer();			
 			setUpMediaPLayer();
 			requestMovieStream();
-			//disable login buttons and fields.
+			
+			updateListTable();	//TODO must be redone
 			
 			//enable and switch to the other tabs.
 			tabbedPane.setEnabledAt(0, true);
@@ -544,6 +567,7 @@ public class Client extends JFrame {
 			tabbedPane.setEnabledAt(2, true);
 			
 			tabbedPane.setSelectedIndex(0);
+			
 		}else{
 			userNameField.setBackground(Color.RED);
 			passwordField.setBackground(Color.RED);

@@ -16,16 +16,16 @@ public class VideoTableModel extends AbstractTableModel {
 									"Genre",
 									"Rating"};*/
 	private Object[][] tableData = {
-		{"A Title", "3.00", "isFavourite"},
-		{"A Second Title", "3.00", "isntFavourite"}};
-
-	public VideoTableModel(List<VideoFile> videoList) {
-		this.videoList = videoList;
-		for(VideoFile eachVideo : this.videoList){
-				//Generate the tableData here
-		}
+		{"An Example Title", "3.00", "isFavourite"},
+		{"A Second Example Title", "3.00", "isntFavourite"}};
+	public VideoTableModel() {
+		
 	}
-
+	
+	public VideoTableModel(Object[][] tableData) {
+		
+	}
+	
 	@Override
 	public int getColumnCount() {
 		return columnNames.length;
@@ -36,23 +36,35 @@ public class VideoTableModel extends AbstractTableModel {
 		return tableData.length;
 	}
 
-	public String getColumnName(int columnNumber) {
-		return columnNames[columnNumber];
+	public String getColumnName(int columnIndex) {
+		return columnNames[columnIndex];
 	}
 	
 	@Override
-	public Object getValueAt(int row, int column) {
-		return tableData[row][column];
-	}
-
-	public Class getColumnClass(int c) {
-		return getValueAt(0,c).getClass();
+	public Object getValueAt(int rowIndex, int columnIndex) {
+		return tableData[rowIndex][columnIndex];
 	}
 	
-	public String getVideoID(int row) {
+	@Override
+	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+		super.setValueAt(aValue, rowIndex, columnIndex);
+	}
+
+	public Class getColumnClass(int columnIndex) {
+		return getValueAt(0,columnIndex).getClass();
+	}
+	
+	public void addVideoListData(List<VideoFile> videoList) {
+		this.videoList = videoList;
+		int counter = 0;
+		for(VideoFile eachVideo : this.videoList){
+				
+		}
+	}
+	public String getVideoID(int rowIndex) {
 		String videoID = "";
 		for(VideoFile eachVideo : this.videoList){
-			if (tableData[row][0].equals(eachVideo.getTitle())){
+			if (tableData[rowIndex][0].equals(eachVideo.getTitle())){
 				videoID = eachVideo.getID();
 			}
 		}
