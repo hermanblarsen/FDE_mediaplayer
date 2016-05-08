@@ -171,8 +171,8 @@ public class ClientConnection implements Runnable {
 
 	// Used for testing when other lists are used and checked.
 	protected List<VideoFile> getVideoList(String fileLocation) {
-		XMLReader reader = new XMLReader();
-		List<VideoFile> videoList = reader.getList(fileLocation);
+		videoListParser reader = new videoListParser(fileLocation);
+		List<VideoFile> videoList = reader.parseVideoList();
 		return videoList;
 	}
 

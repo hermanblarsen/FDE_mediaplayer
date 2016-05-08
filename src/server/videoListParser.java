@@ -11,6 +11,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 
 public class videoListParser {
 
@@ -41,31 +42,40 @@ public class videoListParser {
 			video.setID(videoElement.getAttribute("id"));
 			NodeList subElements = videoElement.getChildNodes();
 			for (int j = 0; j < subElements.getLength(); j++) {
-				Element subElement = (Element) subElements.item(j);
-				String elementTag = subElement.getTagName();
-				switch (elementTag) {
-				case "title":
-					video.setTitle(subElement.getTextContent());
-					break;
-				case "filename":
-					video.setFilename(subElement.getTextContent());
-					break;
-				case "comments":
-					//getting all the comment nodes
-					ArrayList<String> tempcommentList = (ArrayList<String>) video.getPublicCommentsList();
-					NodeList commentList = subElement.getChildNodes();
-					for (int k = 0; k < commentList.getLength(); k++) {
-						String comment = ((Element)commentList.item(k)).getTextContent();
-						tempcommentList.add(comment);
+				if (subElements.item(j).getNodeType() == Node.ELEMENT_NODE) {
+					Element subElement = (Element) subElements.item(j);
+					String elementTag = subElement.getTagName();
+					switch (elementTag) {
+					case "title":
+						video.setTitle(subElement.getTextContent());
+						break;
+					case "filename":
+						video.setFilename(subElement.getTextContent());
+						break;
+					case "comments":
+						//getting all the comment nodes
+						ArrayList<String> tempcommentList = (ArrayList<String>) video.getPublicCommentsList();
+						NodeList commentList = subElement.getChildNodes();
+						for (int k = 0; k < commentList.getLength(); k++) {
+							if(commentList.item(k).getNodeType() == Node.ELEMENT_NODE){
+								String comment = ((Element) commentList.item(k)).getTextContent();
+								tempcommentList.add(comment);
+							}
+						}
+						video.setPublicCommentsList(tempcommentList);
+						break;
+					default:
+						break;
 					}
-					video.setPublicCommentsList(tempcommentList);
-					break;
-				default:
-					break;
 				}
 			}
 			videoList.add(video);
 		}
 		return videoList;
 	}
+	
+	public void writeVideoList(){
+		
+	}
+	
 }
