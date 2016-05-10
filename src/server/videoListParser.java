@@ -106,13 +106,18 @@ public class videoListParser {
 				filename.setTextContent(video.getFilename());
 				videoNode.appendChild(filename);
 				
-				Element comments = doc.createElement("comments");
-				for(String comment : video.getPublicCommentsList()){
-					Element temp_comment = doc.createElement("comment");
-					temp_comment.setTextContent(comment);
-					comments.appendChild(temp_comment);
+				
+				//if there are comments available, write them into the xml
+				ArrayList<String> temporary_commentList = (ArrayList<String>) video.getPublicCommentsList();
+				if (temporary_commentList != null) {
+					Element comments = doc.createElement("comments");
+					for (String comment : temporary_commentList) {
+						Element temp_comment = doc.createElement("comment");
+						temp_comment.setTextContent(comment);
+						comments.appendChild(temp_comment);
+					} 
+					videoNode.appendChild(comments);
 				}
-				videoNode.appendChild(comments);
 				
 				rootElement.appendChild(videoNode);
 			}
@@ -122,12 +127,8 @@ public class videoListParser {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(new File("C:\\file.xml"));
+			StreamResult result = new StreamResult(new File("src/server/video_repository/videoList.xml"));
 
-			// Output to console for testing
-			// StreamResult result = new StreamResult(System.out);
-
-			
 				transformer.transform(source, result);
 			} catch (TransformerException e) {
 				// TODO Auto-generated catch block

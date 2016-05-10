@@ -77,6 +77,7 @@ public class Client extends JFrame {
 	private JTextPane textPane;
 	private JTable listTable;
 	private VideoTableModel listVideoTableModel;
+	
 	/**
 	 * Launch the application.
 	 */
@@ -99,6 +100,8 @@ public class Client extends JFrame {
 	}
 
 	private void requestMovieStream() {
+		mediaPlayer.release();
+		setUpMediaPLayer();
 		writeStatus("STREAMING...", Color.GREEN);
 		String media = "rtp://@127.0.0.1:" + streamPort;
 		mediaPlayer.playMedia(media);
@@ -162,14 +165,14 @@ public class Client extends JFrame {
 		JButton btnComment = new JButton("Comment");
 		btnComment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				String videoID= "";//= (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				String videoID= (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
 				for(VideoFile eachVideo : videoList) {
 					if(listTable.getValueAt(listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
 						videoID = eachVideo.getID();
 					}
 				}
 				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient , user);
-				
+				commentsWindow.show();
 			}
 		});
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);

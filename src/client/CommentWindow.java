@@ -14,6 +14,8 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.awt.event.ActionEvent;
+import java.awt.Dimension;
+import java.awt.Point;
 
 public class CommentWindow extends JFrame{
 	
@@ -26,6 +28,12 @@ public class CommentWindow extends JFrame{
 	private List<String> comments = new ArrayList<String>();
 
 	public CommentWindow(String video,Client client,UserAccount user){
+		setLocation(new Point(100, 100));
+		setPreferredSize(new Dimension(600, 400));
+		setResizable(false);
+		setMinimumSize(new Dimension(600, 430));
+		setMaximumSize(new Dimension(600, 430));
+		setAlwaysOnTop(true);
 		
 		this.clientField = client;
 		this.videoField = video;
@@ -40,6 +48,10 @@ public class CommentWindow extends JFrame{
 					clientField.send("COMMENT");
 					clientField.send(videoField);
 					clientField.send("["+userField.getUserNameID()+"]: " +commentPane.getText());
+					//resetting the comment pane
+					commentPane.setText("");
+					//obtaining the new updated comment list
+					getVideoComments();
 				}
 			}
 		});
@@ -64,8 +76,11 @@ public class CommentWindow extends JFrame{
 		clientField.send(videoField);
 		comments = (ArrayList<String>)clientField.read();
 		String text = "";
-		for (String comment : comments) {
-			text += comment + "\n";
+		//if there are no comments comments will be null, hence the check.
+		if (comments != null) {
+			for (String comment : comments) {
+				text += comment + "\n";
+			} 
 		}
 		commentsPane.setText(text);
 	}

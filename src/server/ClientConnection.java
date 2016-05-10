@@ -122,8 +122,13 @@ public class ClientConnection implements Runnable {
 					for(VideoFile video : videoList){
 						if (video.getID().equals(videoID)) {
 							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
+							//if no comments list exists, create one
+							if (commentsList == null) {
+								commentsList = new ArrayList<String>();
+							}
 							commentsList.add(comment);
 							video.setPublicCommentsList(commentsList);
+							
 							break;
 						}
 					}
