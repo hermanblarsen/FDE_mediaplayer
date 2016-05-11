@@ -90,7 +90,21 @@ public class ClientConnection implements Runnable {
 
 				if (userInput == null) {
 					continue;
-				} else if (userInput.equals("GETLIST")) {
+				}else if(userInput.equals("PAUSE")){
+					if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+						mediaPlayer.pause();
+					}
+				}else if(userInput.equals("PLAY")){
+					if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+						mediaPlayer.play();
+					}
+				}else if (userInput.equals("STREAM POSITION")){
+					float position =0;
+					if (mediaPlayer != null) {
+						position = mediaPlayer.getPosition();
+					}
+					send(position);
+				}else if (userInput.equals("GETLIST")) {
 					sendVideoListToClient();
 				} else if (userInput.equals("STREAM")) {
 					String videoID = "";
@@ -105,7 +119,9 @@ public class ClientConnection implements Runnable {
 				} else if (userInput.equals("SKIP")) {
 					float videoPosition = 0;
 					videoPosition = (float) read();
-					mediaPlayer.setPosition(videoPosition);
+					if(mediaPlayer != null && videoPosition >0 && videoPosition < 1){
+						mediaPlayer.setPosition(videoPosition);
+					}
 				}else if (userInput.equals("GET VIDEO COMMENTS")){
 					String videoID = (String) read();
 					getVideoList();

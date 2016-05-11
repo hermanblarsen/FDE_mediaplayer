@@ -41,6 +41,11 @@ import java.awt.TextArea;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.hamcrest.core.IsNull;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class Client extends JFrame {
 	
 	private UserAccount user = null;
@@ -78,6 +83,48 @@ public class Client extends JFrame {
 	private JTable listTable;
 	private VideoTableModel listVideoTableModel;
 	
+	private JSlider positionTimeSlider;
+	private Timer update_Timer =  new Timer();
+	/*used to temporarily disable the slider event when the slider value
+	 * is changed by code rather than by the user. the code changes the slider
+	 * value when a video is streaming in order to display the current position of the stream.*/
+	private boolean sliderEventActive = true;
+	private TimerTask updateSliderPositionTask = new TimerTask() {
+		@Override
+		public void run() {
+			send("STREAM POSITION");
+			float position = (float) read();
+			if (position > 0f && position < 1f) {
+				//prevent the change listener from firing
+				sliderEventActive = false;
+				positionTimeSlider.setValue((int) position * 100);
+				positionTimeSlider.validate();
+				sliderEventActive = true;
+			}
+		}
+	};
+	ModifiedTimerTask skipTask = new ModifiedTimerTask(0);
+	class ModifiedTimerTask extends TimerTask{
+		private float taskvalue;
+		public ModifiedTimerTask(float value){
+			taskvalue = value;
+		}
+		@Override
+		public void run() {
+			// first check if there is playable media
+			if (mediaPlayer.isPlayable()) {
+				// Avoid end of file freeze-up
+				if (taskvalue > 0.99f) {
+					taskvalue = 0.99f;
+				}
+				send("SKIP");
+				send(taskvalue);
+				send("PLAY");
+			}
+		}
+	};
+
+
 	/**
 	 * Launch the application.
 	 */
@@ -185,13 +232,6 @@ public class Client extends JFrame {
 				send("STREAM");
 				sendSelectedVideo();
 				tabbedPane.setSelectedIndex(2);
-				try {
-					mediaLength = (long) inputFromServer.readObject();
-				} catch (ClassNotFoundException e1) {
-					e1.printStackTrace();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
 			}
 		});
 		
@@ -261,17 +301,21 @@ public class Client extends JFrame {
 		subPanelControlMenu.setVisible(false);
 		mouseEventPanelControlMenu.add(subPanelControlMenu);
 		JButton playPauseButton = new JButton("Play");
+		
 		playPauseButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// check if there is anything to play
+				
 				if (mediaPlayer.isPlayable()) {
 					// depending on if the video is already playing the button
 					// function changes.
 					if (mediaPlayer.isPlaying()) {
 						mediaPlayer.pause();
+						send("PAUSE");
 					} else {
 						mediaPlayer.play();
+						send("PLAY");
 					}
 				}
 			}
@@ -295,21 +339,24 @@ public class Client extends JFrame {
 		subPanelControlMenu.add(fullSkipButton);
 		JLabel timePlayingLabel = new JLabel("Time Remaining");
 		subPanelControlMenu.add(timePlayingLabel);
-		JSlider positionTimeSlider = new JSlider(0, 100);
+		
+		
+		positionTimeSlider = new JSlider(0, 100);
 		positionTimeSlider.addChangeListener(new ChangeListener() {
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				JSlider sliderTemp = (JSlider) e.getSource();
-				float value = ((float) sliderTemp.getValue()) / 100f;
-				// first check if there is playable media
-				if (mediaPlayer.isPlayable()) {
-					// Avoid end of file freeze-up
-					if (value > 0.99f) {
-						value = 0.99f;
-					}
-					send("SKIP");
-					send(value);
+				//created new TimerTask class so that i can pass in a value as argument.
+				
+				//prevents event having any effect if the slider value is changed by code and not by user
+				if (sliderEventActive) {
+					//get the position of the slider as percentage
+					JSlider sliderTemp = (JSlider) e.getSource();
+					float value = ((float) sliderTemp.getValue()) / 100f;
+					//cancel the previous skiptask;
+					send("PAUSE");
+					skipTask.cancel();
+					skipTask = new ModifiedTimerTask(value);
+					update_Timer.schedule(skipTask, 500);
 				}
 			}
 		});
@@ -388,9 +435,11 @@ public class Client extends JFrame {
 		this.tabbedPane.setEnabledAt(1, false);
 		this.tabbedPane.setEnabledAt(2, false);
 		this.pack();// makes sure everything is displayable.
+		
 
 	}
-
+	
+	
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	// Methods used to set up the connection to the server
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -425,7 +474,6 @@ public class Client extends JFrame {
 			send("GETLIST");
 			try {
 				this.videoList = (List<VideoFile>) inputFromServer.readObject();
-				System.out.println("VIDEOLIST IS FUCKIGN HERRE!");
 			} catch (ClassCastException e) {
 				writeStatus(new String("Could not cast input object stream to videoList"), Color.RED); 
 				e.printStackTrace();
@@ -521,6 +569,29 @@ public class Client extends JFrame {
 		videoPlayerTab.add(mediaPlayerComponent, BorderLayout.CENTER);
 		// videoPlayerTab.add(controlPanel, BorderLayout.SOUTH);//TODO if not
 		// used
+		
+		//starting the update slider position task
+		updateSliderPositionTask.cancel();
+		updateSliderPositionTask = new TimerTask() {
+			@Override
+			public void run() {
+				send("STREAM POSITION");
+				float position = 0.0f;
+				Object input = read();
+				try {
+					position = (float) input;
+				}catch (Exception e){
+				}
+				if (position > 0 && position < 1) {
+					//prevent the change listener from firing
+					sliderEventActive = false;
+					positionTimeSlider.setValue(Math.round(position * positionTimeSlider.getMaximum()));
+					positionTimeSlider.validate();
+					sliderEventActive = true;
+				}
+			}
+		};
+		update_Timer.schedule(updateSliderPositionTask, 0, 1000);
 
 		this.addWindowListener(new WindowAdapter() {
 			@Override
