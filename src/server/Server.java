@@ -23,49 +23,41 @@ public class Server implements Runnable{
 	}
 	
 	public void run(){
-		//creating the server socket
+		//Create general socket for communication with clients.
 		try {
 			serverSocket = new ServerSocket(communicationPort);
 		} catch (IOException e) {
 			System.out.println("ERROR! Unable to create server socket"); //TODO Remove/change to status bar?
 			e.printStackTrace();
 		}
-		// Awaiting client connections
+		
+		// Await client connections
 		while (true) {
 			try {
-				// wait for client to connect to socket
+				// Wait for client to connect to socket
 				System.out.println("Successfully opened socket on port: " 
 							+ communicationPort + ", awaiting connection..."); //TODO change to status bar?
-				
-																													// status
-																													// bar
 				this.clientSocket = this.serverSocket.accept();
 				System.out.println("Successfully connected to client."); //TODO change to status bar?
 				
+				//Assign a streaming port to the client
 				int newClientStreamPort = initialStreamPort + this.clientConnectionList.size();
 				streamingOptions = formatRtpStream(this.serverAddress, newClientStreamPort);
 
-				// creating and starting client thread
+				//Create a clientConnection in a separate thread
 				ClientConnection connectedClient = new ClientConnection(this.clientSocket, newClientStreamPort,
 						streamingOptions);
 				this.clientConnectionList.add(connectedClient);
 				Thread clientThread = new Thread(connectedClient);
 				clientThread.start();
-
 			} catch (IOException e) {
-				System.out.println("ERROR! Connection to client failed"); // TODO
-																			// change
-																			// to
-																			// status
-																			// bar
+				System.out.println("ERROR! Connection to client failed"); //TODO change to status bar?
 				e.printStackTrace();
-				// prevents the start of a new thread if no connection is made.
 			}
 		}
 	}
 
-	public Server(){
-	}
+	
 
 	private String formatRtpStream(String serverAddress, int streamPort) {
 		StringBuilder sb = new StringBuilder(60);
@@ -81,9 +73,7 @@ public class Server implements Runnable{
 		try {
 			socket.close();
 		} catch (IOException e) {
-			System.out.println("Failed to close server-sockets"); // TODO change
-																	// to status
-																	// bar
+			System.out.println("Failed to close server-sockets"); //TODO change to status bar?
 			e.printStackTrace();
 		}
 	}

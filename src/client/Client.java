@@ -23,9 +23,6 @@ import javax.swing.JComboBox;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -43,22 +40,18 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
 
 import com.sun.jna.*;
-import java.awt.TextArea;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-
-import org.hamcrest.core.IsNull;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class Client extends JFrame {
 
-	private UserAccount user = null;
+	private UserAccount currentUser = null;
 	protected boolean testMode = false;
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
-	private int streamPort;
+	private int clientSpecificStreamPort;
 	private String host = "127.0.0.1";
 	private ObjectInputStream inputFromServer;
 	private ObjectOutputStream outputToServer;
@@ -74,7 +67,7 @@ public class Client extends JFrame {
 	protected JComboBox<String> selectionBox;
 	protected JPanel subPanelControlMenu;
 	protected JPanel subPanelAudioMenu;
-	protected JOptionPane errorOptionPane;
+	//protected JOptionPane errorOptionPane;
 	private JPanel listViewTab;
 	private JPanel settingsTab;
 	private JPanel videoPlayerTab;
@@ -82,7 +75,7 @@ public class Client extends JFrame {
 	private JTextField userNameField;
 	private JPasswordField passwordField;
 	private JTextField searchField;
-	private JButton btnLogin;
+	private JButton loginButton;
 	private JPanel statusPanel;
 	private JTextPane clientStatusBar;
 	private JTable listTable;
@@ -157,7 +150,7 @@ public class Client extends JFrame {
 		mediaPlayer.release();
 		setUpMediaPLayer();
 		writeStatus("STREAMING...", Color.GREEN);
-		String media = "rtp://@127.0.0.1:" + streamPort;
+		String media = "rtp://@127.0.0.1:" + clientSpecificStreamPort;
 		mediaPlayer.playMedia(media);
 	}
 
@@ -190,7 +183,6 @@ public class Client extends JFrame {
 		
 		
 		searchField.getDocument().addDocumentListener(new DocumentListener() {
-			
 			@Override
 			public void removeUpdate(DocumentEvent e) {
 				String searchText = searchField.getText().trim();
@@ -201,7 +193,6 @@ public class Client extends JFrame {
 					listTableRowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
 				}
 			}
-			
 			@Override
 			public void insertUpdate(DocumentEvent e) {
 				String searchText = searchField.getText().trim();
@@ -212,24 +203,10 @@ public class Client extends JFrame {
 					listTableRowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
 				}
 			}
-			
 			@Override
-			public void changedUpdate(DocumentEvent e) {
-				// TODO Auto-generated method stub
-				
+			public void changedUpdate(DocumentEvent e) {				
 			}
 		});
-
-		JButton searchButton = new JButton("Search");
-		searchButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				
-
-			}
-		});
-		listViewNorthPanel.add(searchButton, BorderLayout.EAST);
 
 		JPanel listViewWestPanel = new JPanel();
 		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
@@ -238,10 +215,6 @@ public class Client extends JFrame {
 
 		listScrollPanel = new JScrollPane();
 		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
-
-		//listTable = new JTable(); //TODO List Shait
-		
-		
 
 		JButton btnComment = new JButton("Comment");
 		btnComment.addActionListener(new ActionListener() {
@@ -252,7 +225,7 @@ public class Client extends JFrame {
 						videoID = eachVideo.getID();
 					}
 				}
-				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient, user);
+				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient, currentUser);
 				commentsWindow.show();
 			}
 		});
@@ -293,23 +266,16 @@ public class Client extends JFrame {
 		passwordField.setBounds(102, 61, 146, 26);
 		settingsTab.add(passwordField);
 
-		btnLogin = new JButton("Login");
-		btnLogin.addActionListener(new ActionListener() {
+		loginButton = new JButton("Login");
+		loginButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				login();
 			}
 		});
-		btnLogin.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					login();
-				}
-			}
-		});
-		btnLogin.setBounds(0, 103, 248, 29);
-		settingsTab.add(btnLogin);
+		
+		loginButton.setBounds(0, 103, 248, 29);
+		settingsTab.add(loginButton);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////
 		// Tab where the selected video will be displayed
@@ -594,9 +560,9 @@ public class Client extends JFrame {
 	}
 
 	public Object read() {
-		Object obj = null;
+		Object inputObjectFromStream = null;
 		try {
-			obj = inputFromServer.readObject();
+			inputObjectFromStream = inputFromServer.readObject();
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -604,7 +570,7 @@ public class Client extends JFrame {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return obj;
+		return inputObjectFromStream;
 	}
 
 	// closes all sockets to make sure that they can be used again if the client
@@ -658,10 +624,16 @@ public class Client extends JFrame {
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				send("CLOSECONNECTION");
+				if (updateSliderPositionTask != null) {
+					updateSliderPositionTask.cancel();
+				}
 				mediaPlayerComponent.release();
-				closeSockets();
-				// TODO might need to add more closing stuff here
+				mediaPlayer.release();
+				
+				if (!serverSocket.isClosed()) {
+					send("CLOSECONNECTION");
+					closeSockets();
+				}
 			}
 		});
 	}
@@ -711,21 +683,23 @@ public class Client extends JFrame {
 	 * Trys to log into the user account on the server with the data from the textfields.
 	 */
 	public void login(){
-		String username = this.userNameField.getText().toString();
-		String password = new String(this.passwordField.getPassword());
-		login(username,password);
+		String usernameInput = this.userNameField.getText().toString();
+		String passwordInput = new String(this.passwordField.getPassword());
+		login(usernameInput, passwordInput);
 	}
-	public boolean login(String username,String password) {
-		send(username);
-		send(password);
+	public boolean login(String usernameInput,String passwordInput) {
+		send(usernameInput);
+		send(passwordInput);
 		//obtain the response from the server to see if login succeeded 
-		String response = "";
-		Object input = read();
-		if(input instanceof String){
-			response = (String) input;
+		String serverResponse = "";
+		
+		Object streamInput = read();
+		if(streamInput instanceof String){
+			serverResponse = (String) streamInput;
 		}
-		if (response.equals("LOGIN SUCCEDED")) {
-			this.user = (UserAccount) read();
+		
+		if (serverResponse.equals("LOGIN SUCCEDED")) {
+			this.currentUser = (UserAccount) read();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
 			userNameField.setBackground(Color.WHITE);
 			passwordField.setBackground(Color.WHITE);
@@ -733,11 +707,11 @@ public class Client extends JFrame {
 			// disable login buttons and fields.
 			userNameField.setEnabled(false);
 			passwordField.setEnabled(false);
-			btnLogin.setEnabled(false);
+			loginButton.setEnabled(false);
 			this.validate();
 
 			send("STREAMPORT");
-			this.streamPort = (int) read();
+			this.clientSpecificStreamPort = (int) read();
 
 			// get the video list from the server
 			getVideoListFromServer();
@@ -762,44 +736,33 @@ public class Client extends JFrame {
 
 	public void updateVideoList() {
 		showListGrid = true;
-		
-		
-		
 		listTableModel = new VideoTableModel(this.videoList.size());
-		
 		listTableRowSorter = new TableRowSorter<>(listTableModel);
 		
-		
-		
-		
 		listTable = new JTable(listTableModel);
-		
 		listTable.setRowSorter(listTableRowSorter);
-		
-		//listTable.setAutoCreateRowSorter(true);
-		listScrollPanel.setViewportView(listTable);
 		listTable.setShowGrid(showListGrid);
 		listTable.getTableHeader().setReorderingAllowed(false);
-
+		listScrollPanel.setViewportView(listTable);
+		
 		int rowCounter = 0;
-		for (VideoFile eachVideo : this.videoList) {
+		for (VideoFile aVideo : this.videoList) {
 			int columnCounter = 0;
-			this.listTable.setValueAt(eachVideo.getTitle(), rowCounter, columnCounter);
+			this.listTable.setValueAt(aVideo.getTitle(), rowCounter, columnCounter);
 			columnCounter++;
-			this.listTable.setValueAt(eachVideo.getDurationInSeconds(), rowCounter, columnCounter);
+			this.listTable.setValueAt(aVideo.getDurationInSeconds(), rowCounter, columnCounter);
 			columnCounter++;
-			this.listTable.setValueAt(eachVideo.getIsFavourite(), rowCounter, columnCounter);
+			this.listTable.setValueAt(aVideo.getIsFavourite(), rowCounter, columnCounter);
 			rowCounter++;
 		}
-
-		this.listTable.updateUI();
 		validate();
 	}
 
 	private void sendSelectedVideo() {
-		for (VideoFile eachVideo : this.videoList) {
-			if (this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
-				send(eachVideo.getID());
+		for (VideoFile aVideo : this.videoList) {
+			if (this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(aVideo.getTitle())) {
+				//Send the video ID of the videofile object with a mathcing title as the first column in selected row
+				send(aVideo.getID());
 			}
 		}
 	}
