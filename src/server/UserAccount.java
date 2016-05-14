@@ -6,15 +6,25 @@ import java.util.List;
 
 public class UserAccount implements Serializable{
 	private String userNameID;
+	private String password;
+	private List<VideoFile> Videos = new ArrayList<VideoFile>();
+	
 	public String getUserNameID() {
 		return userNameID;
+	}
+
+	public List<VideoFile> getVideos() {
+		return Videos;
+	}
+
+	public void setVideos(List<VideoFile> videos) {
+		Videos = videos;
 	}
 
 	public void setUserNameID(String userNameID) {
 		this.userNameID = userNameID;
 	}
 
-	private String password;
 	
 	public String getPassword() {
 		return password;
@@ -24,7 +34,7 @@ public class UserAccount implements Serializable{
 		this.password = password;
 	}
 
-	private List<VideoFile> favouriteVideos = new ArrayList<VideoFile>();
+	
 	
 	public UserAccount(String userName, String password){
 		this.userNameID = userName;
