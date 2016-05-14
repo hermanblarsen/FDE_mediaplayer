@@ -21,6 +21,9 @@ import javax.swing.JComboBox;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -32,6 +35,7 @@ import java.awt.Dimension;
 
 import uk.co.caprica.vlcj.binding.LibVlc;
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
+import uk.co.caprica.vlcj.player.embedded.DefaultFullScreenStrategy;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
@@ -47,10 +51,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Client extends JFrame {
-	
+
 	private UserAccount user = null;
 
-	
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
 	private int streamPort;
@@ -60,6 +63,7 @@ public class Client extends JFrame {
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
 
 	private PlayerControlsPanel controlPanel;
+	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private EmbeddedMediaPlayer mediaPlayer;
 
 	private Client thisClient = this;
@@ -73,42 +77,38 @@ public class Client extends JFrame {
 	private JPanel settingsTab;
 	private JPanel videoPlayerTab;
 	private JTabbedPane tabbedPane;
-	private long mediaLength;
 	private JTextField userNameField;
 	private JPasswordField passwordField;
 	private JTextField searchField;
-	private JButton btnLogin ;
+	private JButton btnLogin;
 	private JPanel statusPanel;
 	private JTextPane textPane;
 	private JTable listTable;
 	private VideoTableModel listVideoTableModel;
-	
+
 	private JSlider positionTimeSlider;
-	private Timer update_Timer =  new Timer();
-	/*used to temporarily disable the slider event when the slider value
-	 * is changed by code rather than by the user. the code changes the slider
-	 * value when a video is streaming in order to display the current position of the stream.*/
+	private Timer updateTimer = new Timer();
+	/*
+	 * used to temporarily disable the slider event when the slider value is
+	 * changed by code rather than by the user. the code changes the slider
+	 * value when a video is streaming in order to display the current position
+	 * of the stream.
+	 */
 	private boolean sliderEventActive = true;
-	private TimerTask updateSliderPositionTask = new TimerTask() {
-		@Override
-		public void run() {
-			send("STREAM POSITION");
-			float position = (float) read();
-			if (position > 0f && position < 1f) {
-				//prevent the change listener from firing
-				sliderEventActive = false;
-				positionTimeSlider.setValue((int) position * 100);
-				positionTimeSlider.validate();
-				sliderEventActive = true;
-			}
-		}
-	};
-	ModifiedTimerTask skipTask = new ModifiedTimerTask(0);
-	class ModifiedTimerTask extends TimerTask{
+	private TimerTask updateSliderPositionTask;
+	private ModifiedTimerTask skipTask;
+	private JButton playPauseButton;
+	private JButton stopButton;
+	private DefaultFullScreenStrategy fullScreenStrategy;
+	
+
+	class ModifiedTimerTask extends TimerTask {
 		private float taskvalue;
-		public ModifiedTimerTask(float value){
+
+		public ModifiedTimerTask(float value) {
 			taskvalue = value;
 		}
+
 		@Override
 		public void run() {
 			// first check if there is playable media
@@ -117,13 +117,13 @@ public class Client extends JFrame {
 				if (taskvalue > 0.99f) {
 					taskvalue = 0.99f;
 				}
+				send("PAUSE");
 				send("SKIP");
 				send(taskvalue);
 				send("PLAY");
 			}
 		}
 	};
-
 
 	/**
 	 * Launch the application.
@@ -143,7 +143,7 @@ public class Client extends JFrame {
 
 	public Client() {
 		setupGUI();
-		connectToTheServer(); // TODO Only for manualtesting
+		connectToTheServer(); // TODO For manual testing and running of the
 	}
 
 	private void requestMovieStream() {
@@ -172,91 +172,90 @@ public class Client extends JFrame {
 		listViewTab = new JPanel();
 		tabbedPane.addTab("Video List", null, listViewTab, "Browse videos to watch");
 		listViewTab.setLayout(new BorderLayout(0, 0));
-		
+
 		JPanel listViewNorthPanel = new JPanel();
 		listViewTab.add(listViewNorthPanel, BorderLayout.NORTH);
 		listViewNorthPanel.setLayout(new BorderLayout(0, 0));
-		
+
 		searchField = new JTextField();
 		listViewNorthPanel.add(searchField, BorderLayout.CENTER);
 		searchField.setColumns(10);
-		
+
 		JButton searchButton = new JButton("Search");
 		searchButton.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Update the list to display titles containing the search string
-				
+				// TODO Update the list to display titles containing the search
+				// string
+
 			}
 		});
 		listViewNorthPanel.add(searchButton, BorderLayout.EAST);
-		
+
 		JPanel listViewWestPanel = new JPanel();
 		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
 		listViewWestPanel.setLayout(new BorderLayout(0, 0));
 		contentPane.add(tabbedPane);
-	
-		
-		
+
 		JScrollPane listScrollPanel = new JScrollPane();
 		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
-		
+
 		listVideoTableModel = new VideoTableModel();
 		listTable = new JTable(listVideoTableModel);
 		listTable.setShowGrid(false);
-		//listTable.getTableHeader().setEnabled(false);
+		// listTable.getTableHeader().setEnabled(false);
 		listScrollPanel.setViewportView(listTable);
-		
-		
+
 		JButton btnComment = new JButton("Comment");
 		btnComment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				String videoID= (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
-				for(VideoFile eachVideo : videoList) {
-					if(listTable.getValueAt(listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
+				String videoID = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				for (VideoFile eachVideo : videoList) {
+					if (listTable.getValueAt(listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
 						videoID = eachVideo.getID();
 					}
 				}
-				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient , user);
+				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient, user);
 				commentsWindow.show();
 			}
 		});
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
-		
+
 		JButton playButton = new JButton("PLAY");
 		listViewWestPanel.add(playButton, BorderLayout.CENTER);
 		playButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				send("STREAM");
+				updateSliderPositionTask();
 				sendSelectedVideo();
 				tabbedPane.setSelectedIndex(2);
 			}
 		});
-		
+
 		settingsTab = new JPanel();
 		settingsTab.setToolTipText("");
-		tabbedPane.addTab("Settings",null, settingsTab, "Access settings and your SuperFlix account");
+		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
 		settingsTab.setLayout(null);
-		
+
 		JLabel userNameLabel = new JLabel("Username:");
 		userNameLabel.setBounds(0, 16, 87, 32);
 		settingsTab.add(userNameLabel);
-		
+
 		userNameField = new JTextField();
 		userNameField.setBounds(102, 19, 146, 26);
 		settingsTab.add(userNameField);
 		userNameField.setColumns(10);
-		
+
 		JLabel lblPassword = new JLabel("Password:");
 		lblPassword.setBounds(0, 64, 87, 20);
 		settingsTab.add(lblPassword);
-		
+
 		passwordField = new JPasswordField();
 		passwordField.setBounds(102, 61, 146, 26);
 		settingsTab.add(passwordField);
-		
+
 		btnLogin = new JButton("Login");
 		btnLogin.addActionListener(new ActionListener() {
 			@Override
@@ -264,9 +263,16 @@ public class Client extends JFrame {
 				login();
 			}
 		});
+		btnLogin.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+					login();
+				}
+			}
+		});
 		btnLogin.setBounds(0, 103, 248, 29);
 		settingsTab.add(btnLogin);
-		
 
 		/////////////////////////////////////////////////////////////////////////////////////////////
 		// Tab where the selected video will be displayed
@@ -300,77 +306,124 @@ public class Client extends JFrame {
 		subPanelControlMenu = new JPanel();
 		subPanelControlMenu.setVisible(false);
 		mouseEventPanelControlMenu.add(subPanelControlMenu);
-		JButton playPauseButton = new JButton("Play");
-		
+		playPauseButton = new JButton("Pause");
+
 		playPauseButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// check if there is anything to play
-				
+
 				if (mediaPlayer.isPlayable()) {
 					// depending on if the video is already playing the button
 					// function changes.
 					if (mediaPlayer.isPlaying()) {
 						mediaPlayer.pause();
 						send("PAUSE");
+						if(updateSliderPositionTask!=null) {
+							updateSliderPositionTask.cancel();
+						}
+						
+						playPauseButton.setText("Play");
+						
 					} else {
 						mediaPlayer.play();
 						send("PLAY");
+						//if(updateSliderPositionTask==null) {
+						updateTimer.purge();
+						updateSliderPositionTask();
+						//}
+						
+						playPauseButton.setText("Pause");
 					}
+				}else {
+					send("PLAY");
+					mediaPlayer.play();
+					//if(updateTimer.g==null) {
+					updateTimer.purge();
+					updateSliderPositionTask();
+					//}
+					playPauseButton.setText("Pause");
 				}
 			}
 		});
-
 		subPanelControlMenu.add(playPauseButton);
-		
-		JButton stopButton = new JButton("Stop");
+
+		stopButton = new JButton("Stop");
+		stopButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// check if there is anything to play
+
+				if (mediaPlayer.isPlayable()) {
+					send("STOP");
+					mediaPlayer.stop();
+					playPauseButton.setText("Play From Start");
+					updateSliderPositionTask.cancel();
+				}
+
+			}
+		});
 		subPanelControlMenu.add(stopButton);
-		
+
 		JButton fullSkipBackButton = new JButton("<--");
 		subPanelControlMenu.add(fullSkipBackButton);
-		
+
 		JButton skipBackButton = new JButton("<-");
 		subPanelControlMenu.add(skipBackButton);
-		
+
 		JButton skipButton = new JButton("->");
 		subPanelControlMenu.add(skipButton);
-		
+
 		JButton fullSkipButton = new JButton("-->");
 		subPanelControlMenu.add(fullSkipButton);
 		JLabel timePlayingLabel = new JLabel("Time Remaining");
 		subPanelControlMenu.add(timePlayingLabel);
-		
-		
+
 		positionTimeSlider = new JSlider(0, 100);
 		positionTimeSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				//created new TimerTask class so that i can pass in a value as argument.
-				
-				//prevents event having any effect if the slider value is changed by code and not by user
+				// created new TimerTask class so that i can pass in a value as
+				// argument.
+
+				// prevents event having any effect if the slider value is
+				// changed by code and not by user
 				if (sliderEventActive) {
-					//get the position of the slider as percentage
+					// get the position of the slider as percentage
 					JSlider sliderTemp = (JSlider) e.getSource();
 					float value = ((float) sliderTemp.getValue()) / 100f;
-					//cancel the previous skiptask;
-					send("PAUSE");
-					skipTask.cancel();
+
+					// Cancel the previous skiptask;
+					if (skipTask != null) {
+						skipTask.cancel();
+					}
 					skipTask = new ModifiedTimerTask(value);
-					update_Timer.schedule(skipTask, 500);
+					updateTimer.schedule(skipTask, 500);
 				}
 			}
 		});
-		
-		
+
 		subPanelControlMenu.add(positionTimeSlider);
 		JLabel durationOfMovie = new JLabel("Time playing");
 		subPanelControlMenu.add(durationOfMovie);
-		
+
+		fullScreenStrategy = new DefaultFullScreenStrategy(this);
 		JButton fullscreenButton = new JButton("Fullscreen");
 		fullscreenButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (fullScreenStrategy.isFullScreenMode()) {
+					fullScreenStrategy.exitFullScreenMode();
+					mediaPlayerComponent.requestFocus();
+				} else {
+					fullScreenStrategy.enterFullScreenMode();
+				}
+
 			}
 		});
+
 		subPanelControlMenu.add(fullscreenButton);
 
 		Component verticalStrut = Box.createVerticalStrut(20);
@@ -414,32 +467,31 @@ public class Client extends JFrame {
 		});
 		subPanelAudioMenu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		subPanelAudioMenu.add(audioSlider);
-		
+
 		statusPanel = new JPanel();
 		statusPanel.enableInputMethods(false);
 		contentPane.add(statusPanel, BorderLayout.SOUTH);
 		statusPanel.setLayout(new BorderLayout(0, 0));
-		
+
 		JLabel statusBar = new JLabel("Status:");
-		statusBar.setToolTipText("Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
+		statusBar.setToolTipText(
+				"Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
 		statusPanel.add(statusBar, BorderLayout.WEST);
-		
+
 		textPane = new JTextPane();
 		textPane.setEditable(false);
 		statusPanel.add(textPane, BorderLayout.CENTER);
 
 		this.setPreferredSize(new Dimension(800, 600));
 		this.tabbedPane.setSelectedIndex(1);
-		//disable the video list and video player tab untill the user logs in
+		// disable the video list and video player tab untill the user logs in
 		this.tabbedPane.setEnabledAt(0, false);
 		this.tabbedPane.setEnabledAt(1, false);
 		this.tabbedPane.setEnabledAt(2, false);
 		this.pack();// makes sure everything is displayable.
-		
 
 	}
-	
-	
+
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	// Methods used to set up the connection to the server
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -457,12 +509,15 @@ public class Client extends JFrame {
 			// setting up the output stream
 			this.outputToServer = new ObjectOutputStream(this.serverSocket.getOutputStream());
 			this.inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
-			writeStatus(new String("Successfully connected to " + host + ":" + port), Color.GREEN);;
+			writeStatus(new String("Successfully connected to " + host + ":" + port), Color.GREEN);
+			;
 		} catch (UnknownHostException e) {
-			writeStatus(new String("Unknown host, unable to connect to: " + host + "."), Color.RED);; 
+			writeStatus(new String("Unknown host, unable to connect to: " + host + "."), Color.RED);
+			;
 			System.exit(-1);
 		} catch (IOException e) {
-			writeStatus(new String("Couldn't open I/O connection " + host + ":" + port + "."), Color.RED);;
+			writeStatus(new String("Couldn't open I/O connection " + host + ":" + port + "."), Color.RED);
+			;
 			System.exit(-1);
 		}
 
@@ -475,11 +530,11 @@ public class Client extends JFrame {
 			try {
 				this.videoList = (List<VideoFile>) inputFromServer.readObject();
 			} catch (ClassCastException e) {
-				writeStatus(new String("Could not cast input object stream to videoList"), Color.RED); 
+				writeStatus(new String("Could not cast input object stream to videoList"), Color.RED);
 				e.printStackTrace();
 			}
 		} catch (ClassNotFoundException e) {
-			writeStatus(new String("Class not found for incoming object(s)"),Color.RED); // TODO
+			writeStatus(new String("Class not found for incoming object(s)"), Color.RED); // TODO
 			e.printStackTrace();
 			System.exit(-1);
 		} catch (IOException e) {
@@ -502,7 +557,8 @@ public class Client extends JFrame {
 			e.printStackTrace();
 		}
 	}
-	public Object read(){
+
+	public Object read() {
 		Object obj = null;
 		try {
 			obj = inputFromServer.readObject();
@@ -531,7 +587,7 @@ public class Client extends JFrame {
 		boolean listIsValid = true;
 		// First make sure that there are actually any videos in the list.
 		if (this.videoList.isEmpty()) {
-			this.errorOptionPane = new JOptionPane(); 
+			this.errorOptionPane = new JOptionPane();
 			writeStatus("Could not get videos from the server :(, Sorry !", Color.RED);
 			listIsValid = false;
 		}
@@ -560,38 +616,10 @@ public class Client extends JFrame {
 		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), vlcLibraryPath);
 		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 
-		final EmbeddedMediaPlayerComponent mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
-
+		mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 		mediaPlayer = mediaPlayerComponent.getMediaPlayer();
-		// controlPanel = new PlayerControlsPanel(mediaPlayer);//TODO if not
-		// used
 
 		videoPlayerTab.add(mediaPlayerComponent, BorderLayout.CENTER);
-		// videoPlayerTab.add(controlPanel, BorderLayout.SOUTH);//TODO if not
-		// used
-		
-		//starting the update slider position task
-		updateSliderPositionTask.cancel();
-		updateSliderPositionTask = new TimerTask() {
-			@Override
-			public void run() {
-				send("STREAM POSITION");
-				float position = 0.0f;
-				Object input = read();
-				try {
-					position = (float) input;
-				}catch (Exception e){
-				}
-				if (position > 0 && position < 1) {
-					//prevent the change listener from firing
-					sliderEventActive = false;
-					positionTimeSlider.setValue(Math.round(position * positionTimeSlider.getMaximum()));
-					positionTimeSlider.validate();
-					sliderEventActive = true;
-				}
-			}
-		};
-		update_Timer.schedule(updateSliderPositionTask, 0, 1000);
 
 		this.addWindowListener(new WindowAdapter() {
 			@Override
@@ -605,6 +633,36 @@ public class Client extends JFrame {
 		});
 	}
 
+	private void updateSliderPositionTask() {
+		// Cancels a previous task if it exists
+		if (updateSliderPositionTask != null) {
+			updateSliderPositionTask.cancel();
+		}
+
+		// Creates a new timerTask to update the timer position
+		updateSliderPositionTask = new TimerTask() {
+			@Override
+			public void run() {
+				send("STREAM POSITION");
+				float positionInTime = 0.0f;
+				Object inputFromServer = read();
+				if (inputFromServer instanceof Float) {
+					positionInTime = (float) inputFromServer;
+				}
+				if (positionInTime >= 0 && positionInTime <= 1) {
+					// prevent the change listener from firing
+					sliderEventActive = false;
+					positionTimeSlider.setValue(Math.round(positionInTime * positionTimeSlider.getMaximum()));
+					positionTimeSlider.validate();
+
+					// Set to active again after moving slider
+					sliderEventActive = true;
+				}
+			}
+		};
+		updateTimer.schedule(updateSliderPositionTask, 0, 2000);
+	}
+
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	// MISC: getters and setters etc
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -616,7 +674,7 @@ public class Client extends JFrame {
 		this.videoList = videoList;
 	}
 
-	public void writeStatus(String status,Color statusColor){
+	public void writeStatus(String status, Color statusColor) {
 		textPane.setText(status);
 		textPane.setBackground(statusColor);
 	}
@@ -624,65 +682,66 @@ public class Client extends JFrame {
 	public void login() {
 		send(this.userNameField.getText().toString());
 		send(new String(this.passwordField.getPassword()));
-		String response =(String) read();
+		String response = (String) read();
 		if (response.equals("LOGIN SUCCEDED")) {
 			this.user = (UserAccount) read();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
 			userNameField.setBackground(Color.WHITE);
 			passwordField.setBackground(Color.WHITE);
-			
-			//disable login buttons and fields.
+
+			// disable login buttons and fields.
 			userNameField.setEnabled(false);
 			passwordField.setEnabled(false);
 			btnLogin.setEnabled(false);
 			this.validate();
-			
+
 			send("STREAMPORT");
 			this.streamPort = (int) read();
-			
+
 			// get the video list from the server
-			getVideoListFromServer();			
+			getVideoListFromServer();
 			setUpMediaPLayer();
 			requestMovieStream();
 			updateVideoList();
-			
-			
-			//enable and switch to the other tabs.
+
+			// enable and switch to the other tabs.
 			tabbedPane.setEnabledAt(0, true);
 			tabbedPane.setEnabledAt(1, true);
 			tabbedPane.setEnabledAt(2, true);
-			
+
 			tabbedPane.setSelectedIndex(0);
-			
-		}else{
+
+		} else {
 			userNameField.setBackground(Color.RED);
 			passwordField.setBackground(Color.RED);
 			writeStatus("LOGIN FAILED", Color.RED);
 		}
 	}
-	
+
 	public void updateVideoList() {
-		//this.listVideoTableModel = new VideoTableModel(this.videoList.size());
-		//this.listTable = new JTable(this.listVideoTableModel);
-		
+		// this.listVideoTableModel = new
+		// VideoTableModel(this.videoList.size());
+		// this.listTable = new JTable(this.listVideoTableModel);
+
 		int rowCounter = 0;
-		for(VideoFile eachVideo : this.videoList) {
+		for (VideoFile eachVideo : this.videoList) {
 			int columnCounter = 0;
 			this.listTable.setValueAt(eachVideo.getTitle(), rowCounter, columnCounter);
 			columnCounter++;
 			this.listTable.setValueAt(eachVideo.getDurationInSeconds(), rowCounter, columnCounter);
 			columnCounter++;
 			this.listTable.setValueAt(eachVideo.getIsFavourite(), rowCounter, columnCounter);
-			rowCounter++;	
+			rowCounter++;
 		}
-		
-		this.listTable.updateUI();		
+
+		this.listTable.updateUI();
 		validate();
-		
+
 	}
+
 	private void sendSelectedVideo() {
-		for(VideoFile eachVideo : this.videoList) {
-			if(this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
+		for (VideoFile eachVideo : this.videoList) {
+			if (this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
 				send(eachVideo.getID());
 			}
 		}

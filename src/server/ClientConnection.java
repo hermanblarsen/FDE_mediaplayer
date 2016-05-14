@@ -25,7 +25,7 @@ public class ClientConnection implements Runnable {
 	private List<UserAccount> userList = new ArrayList<UserAccount>();
 	private Boolean clientIsConnected;
 	private List<VideoFile> videoList = new ArrayList<VideoFile>();
-	//variables for the media player
+	// variables for the media player
 
 	private MediaPlayerFactory mediaPlayerFactory;
 	private HeadlessMediaPlayer mediaPlayer;
@@ -50,26 +50,26 @@ public class ClientConnection implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		String userInput ="";
-		//Read user list
+		String userInput = "";
+		// Read user list
 		userListXMLreader reader = new userListXMLreader();
 		userList = reader.parseUserAccountList();
-		//Attempt login
+		// Attempt login
 		Boolean isLoggedIn = false;
-		while(!isLoggedIn){
+		while (!isLoggedIn) {
 			try {
 				userInput = (String) read();
 				String password = userInput;
 				userInput = (String) read();
 				password += userInput;
-				
-				for(UserAccount user : userList){
-					//check for user name
-					if((user.getUserNameID()+ user.getPassword()).equals(password)){
+
+				for (UserAccount user : userList) {
+					// check for user name
+					if ((user.getUserNameID() + user.getPassword()).equals(password)) {
 						System.out.println("LOGIN SUCCEDED");
 						send("LOGIN SUCCEDED");
 						isLoggedIn = true;
-						//sending user account data to client
+						// sending user account data to client
 						send(user);
 						break;
 					}
@@ -82,7 +82,7 @@ public class ClientConnection implements Runnable {
 				send("LOGIN FAILED");
 			}
 		}
-		while(clientIsConnected){
+		while (clientIsConnected) {
 			try {
 
 				userInput = (String) read();
@@ -90,28 +90,28 @@ public class ClientConnection implements Runnable {
 
 				if (userInput == null) {
 					continue;
-				}else if(userInput.equals("PAUSE")){
+				} else if (userInput.equals("PAUSE")) {
 					if (mediaPlayer != null && mediaPlayer.isPlaying()) {
 						mediaPlayer.pause();
 					}
-				}else if(userInput.equals("PLAY")){
+				} else if (userInput.equals("PLAY")) {
 					if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
 						mediaPlayer.play();
-					}
-				}else if (userInput.equals("STREAM POSITION")){
-					float position =0;
+					} 
+				} else if (userInput.equals("STREAM POSITION")) {
+					float position = 0;
 					if (mediaPlayer != null) {
 						position = mediaPlayer.getPosition();
 					}
 					send(position);
-				}else if (userInput.equals("GETLIST")) {
+				} else if (userInput.equals("GETLIST")) {
 					sendVideoListToClient();
 				} else if (userInput.equals("STREAM")) {
 					String videoID = "";
 					videoID = (String) read();
 					setUpMediaStream(videoID);
-				} else if (userInput.equals("STOPSTREAM")) {
-					stopStream();
+				} else if (userInput.equals("STOP")) {
+					stop();
 				} else if (userInput.equals("CLOSE")) {
 					break;
 				} else if (userInput.equals("STREAMPORT")) {
@@ -119,32 +119,32 @@ public class ClientConnection implements Runnable {
 				} else if (userInput.equals("SKIP")) {
 					float videoPosition = 0;
 					videoPosition = (float) read();
-					if(mediaPlayer != null && videoPosition >0 && videoPosition < 1){
+					if (mediaPlayer != null && videoPosition > 0 && videoPosition < 1) {
 						mediaPlayer.setPosition(videoPosition);
 					}
-				}else if (userInput.equals("GET VIDEO COMMENTS")){
+				} else if (userInput.equals("GET VIDEO COMMENTS")) {
 					String videoID = (String) read();
 					getVideoList();
-					for(VideoFile video : videoList){
+					for (VideoFile video : videoList) {
 						if (video.getID().equals(videoID)) {
 							send(video.getPublicCommentsList());
 							break;
 						}
 					}
-				}else if (userInput.equals("COMMENT")){
+				} else if (userInput.equals("COMMENT")) {
 					String videoID = (String) read();
 					String comment = (String) read();
 					getVideoList();
-					for(VideoFile video : videoList){
+					for (VideoFile video : videoList) {
 						if (video.getID().equals(videoID)) {
 							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
-							//if no comments list exists, create one
+							// if no comments list exists, create one
 							if (commentsList == null) {
 								commentsList = new ArrayList<String>();
 							}
 							commentsList.add(comment);
 							video.setPublicCommentsList(commentsList);
-							
+
 							break;
 						}
 					}
@@ -175,7 +175,8 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 	}
-	public Object read(){
+
+	public Object read() {
 		Object obj = null;
 		try {
 			obj = inputFromClient.readObject();
@@ -188,7 +189,8 @@ public class ClientConnection implements Runnable {
 
 	/**
 	 * Reads the xml video list
-	 * @return 
+	 * 
+	 * @return
 	 * 
 	 * @return
 	 */
@@ -209,9 +211,14 @@ public class ClientConnection implements Runnable {
 	}
 
 	private void setUpMediaStream(String desiredVideoID) {
-
+		if (mediaPlayerFactory != null) {
+			mediaPlayer.stop();
+			mediaPlayerFactory.release();
+			mediaPlayer.release();
+		}
+		
 		String filenameVideo = getVideoNameFromID(desiredVideoID);
-		stopStream();
+
 		mediaPlayerFactory = new MediaPlayerFactory(this.videoRepositoryDatapath + filenameVideo);
 		mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
 		mediaPlayer.playMedia(videoRepositoryDatapath + filenameVideo, this.streamingOptions, ":no-sout-rtp-sap",
@@ -222,11 +229,9 @@ public class ClientConnection implements Runnable {
 	/**
 	 * Tests if a stream is running and stops it if it is running.
 	 */
-	private void stopStream() {
+	private void stop() {
 		if (this.mediaPlayerFactory != null) {
 			this.mediaPlayer.stop();
-			this.mediaPlayer.release();
-			this.mediaPlayerFactory.release();
 		}
 	}
 

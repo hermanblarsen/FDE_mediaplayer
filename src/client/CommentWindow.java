@@ -22,12 +22,12 @@ public class CommentWindow extends JFrame{
 	private JTextPane commentsPane;
 	private JTextPane commentPane;
 	private JButton btnComment;
-	private String videoField;
-	private Client clientField;
-	private UserAccount userField;
+	private String selectedVideo;
+	private Client connectedClient;
+	private UserAccount connectedUser;
 	private List<String> comments = new ArrayList<String>();
 
-	public CommentWindow(String video,Client client,UserAccount user){
+	public CommentWindow(String aSelectedVideo, Client aConnectedClient, UserAccount aConnectedUser) {
 		setLocation(new Point(100, 100));
 		setPreferredSize(new Dimension(600, 400));
 		setResizable(false);
@@ -35,9 +35,9 @@ public class CommentWindow extends JFrame{
 		setMaximumSize(new Dimension(600, 430));
 		setAlwaysOnTop(true);
 		
-		this.clientField = client;
-		this.videoField = video;
-		this.userField = user;
+		this.connectedClient = aConnectedClient;
+		this.selectedVideo = aSelectedVideo;
+		this.connectedUser = aConnectedUser;
 		
 		getContentPane().setLayout(null);
 		btnComment = new JButton("Submit");
@@ -45,9 +45,9 @@ public class CommentWindow extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				//test that comment box is not empty
 				if(commentPane.getText().length() >= 1){
-					clientField.send("COMMENT");
-					clientField.send(videoField);
-					clientField.send("["+userField.getUserNameID()+"]: " +commentPane.getText());
+					connectedClient.send("COMMENT");
+					connectedClient.send(selectedVideo);
+					connectedClient.send("["+connectedUser.getUserNameID()+"]: " +commentPane.getText());
 					//resetting the comment pane
 					commentPane.setText("");
 					//obtaining the new updated comment list
@@ -72,9 +72,17 @@ public class CommentWindow extends JFrame{
 	}
 
 	private void getVideoComments() {
-		clientField.send("GET VIDEO COMMENTS");
-		clientField.send(videoField);
-		comments = (ArrayList<String>)clientField.read();
+		connectedClient.send("GET VIDEO COMMENTS");
+		connectedClient.send(selectedVideo);
+		
+		//Make sure the object in the stream is the arraylist.
+		Object clientInput;
+		do {
+			clientInput = connectedClient.read();
+		} while(!(clientInput instanceof ArrayList<?>));
+		//TODO potential infinite loop
+		
+		comments = (ArrayList<String>)clientInput;
 		String text = "";
 		//if there are no comments comments will be null, hence the check.
 		if (comments != null) {
