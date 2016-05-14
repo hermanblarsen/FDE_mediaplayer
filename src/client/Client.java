@@ -49,7 +49,7 @@ import java.util.TimerTask;
 public class Client extends JFrame {
 	
 	private UserAccount user = null;
-
+	protected boolean testMode = false;
 	
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
@@ -79,7 +79,7 @@ public class Client extends JFrame {
 	private JTextField searchField;
 	private JButton btnLogin ;
 	private JPanel statusPanel;
-	private JTextPane textPane;
+	private JTextPane clientStatusBar;
 	private JTable listTable;
 	private VideoTableModel listVideoTableModel;
 	
@@ -143,7 +143,9 @@ public class Client extends JFrame {
 
 	public Client() {
 		setupGUI();
-		connectToTheServer(); // TODO Only for manualtesting
+		if(!testMode){
+			connectToTheServer(); // TODO Only for manualtesting
+		}
 	}
 
 	private void requestMovieStream() {
@@ -424,9 +426,9 @@ public class Client extends JFrame {
 		statusBar.setToolTipText("Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
 		statusPanel.add(statusBar, BorderLayout.WEST);
 		
-		textPane = new JTextPane();
-		textPane.setEditable(false);
-		statusPanel.add(textPane, BorderLayout.CENTER);
+		clientStatusBar = new JTextPane();
+		clientStatusBar.setEditable(false);
+		statusPanel.add(clientStatusBar, BorderLayout.CENTER);
 
 		this.setPreferredSize(new Dimension(800, 600));
 		this.tabbedPane.setSelectedIndex(1);
@@ -449,7 +451,6 @@ public class Client extends JFrame {
 	public void connectToTheServer() {
 		connectToTheServer(this.host, this.communicationPort);
 	}
-
 	public void connectToTheServer(String host, int port) {
 		writeStatus(new String("Connecting to " + host + ":" + port + "..."), Color.YELLOW);
 		try {
@@ -531,7 +532,6 @@ public class Client extends JFrame {
 		boolean listIsValid = true;
 		// First make sure that there are actually any videos in the list.
 		if (this.videoList.isEmpty()) {
-			this.errorOptionPane = new JOptionPane(); 
 			writeStatus("Could not get videos from the server :(, Sorry !", Color.RED);
 			listIsValid = false;
 		}
@@ -608,23 +608,30 @@ public class Client extends JFrame {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	// MISC: getters and setters etc
 	/////////////////////////////////////////////////////////////////////////////////////////////
-	public List<VideoFile> getVideoList() {
-		return this.videoList;
-	}
 
-	public void setVideoList(List<VideoFile> videoList) {
-		this.videoList = videoList;
-	}
 
 	public void writeStatus(String status,Color statusColor){
-		textPane.setText(status);
-		textPane.setBackground(statusColor);
+		clientStatusBar.setText(status);
+		clientStatusBar.setBackground(statusColor);
 	}
-
-	public void login() {
-		send(this.userNameField.getText().toString());
-		send(new String(this.passwordField.getPassword()));
-		String response =(String) read();
+	
+	/*
+	 * Trys to log into the user account on the server with the data from the textfields.
+	 */
+	public void login(){
+		String username = this.userNameField.getText().toString();
+		String password = new String(this.passwordField.getPassword());
+		login(username,password);
+	}
+	public boolean login(String username,String password) {
+		send(username);
+		send(password);
+		//obtain the response from the server to see if login succeeded 
+		String response = "";
+		Object input = read();
+		if(input instanceof String){
+			response = (String) input;
+		}
 		if (response.equals("LOGIN SUCCEDED")) {
 			this.user = (UserAccount) read();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
@@ -653,12 +660,13 @@ public class Client extends JFrame {
 			tabbedPane.setEnabledAt(2, true);
 			
 			tabbedPane.setSelectedIndex(0);
-			
+			return true;
 		}else{
 			userNameField.setBackground(Color.RED);
 			passwordField.setBackground(Color.RED);
 			writeStatus("LOGIN FAILED", Color.RED);
 		}
+		return false;
 	}
 	
 	public void updateVideoList() {

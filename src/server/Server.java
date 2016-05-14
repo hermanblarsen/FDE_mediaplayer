@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Server {
+public class Server implements Runnable{
 	private ServerSocket serverSocket;
 	private String serverAddress = "127.0.0.1";
 	private int communicationPort =  1337;
@@ -15,11 +15,14 @@ public class Server {
 	private String streamingOptions = formatRtpStream(serverAddress, initialStreamPort);
 	private Socket clientSocket;
 	private List<ClientConnection> clientConnectionList = new ArrayList<ClientConnection>(); 
+	
 	public static void main(String[] args){
-		new Server(); //Main for testing
+		Server thisServer = new Server();
+		Thread serverThread = new Thread(thisServer);
+		serverThread.start();
 	}
 	
-	public Server(){
+	public void run(){
 		//creating the server socket
 		try {
 			serverSocket = new ServerSocket(communicationPort);
@@ -51,6 +54,9 @@ public class Server {
 				//prevents the start of a new thread if no connection is made.
 			}
 		}
+	}
+	
+	public Server(){
 	}
 	
 	private String formatRtpStream(String serverAddress, int streamPort) {
