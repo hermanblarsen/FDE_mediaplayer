@@ -18,14 +18,15 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 public class ClientConnection implements Runnable {
 
 	private int streamPort;
+	private Boolean clientIsConnected;
+	private Boolean userIsLoggedIn;
 	private Socket connectedClientSocket;
 	private ObjectOutputStream outputToClient;
 	private ObjectInputStream inputFromClient;
 	private String streamingOptions;
 	private List<UserAccount> userList = new ArrayList<UserAccount>();
-	private Boolean clientIsConnected;
 	private List<VideoFile> videoList = new ArrayList<VideoFile>();
-	// variables for the media player
+	
 
 	private MediaPlayerFactory mediaPlayerFactory;
 	private HeadlessMediaPlayer mediaPlayer;
@@ -33,8 +34,8 @@ public class ClientConnection implements Runnable {
 	private String xmlListDatapath = "src/server/video_repository/videoList.xml";
 	private String videoRepositoryDatapath = "src/server/video_repository/";
 
-	public ClientConnection(Socket socket, int streamPort, String streamingOptions) {
-		this.connectedClientSocket = socket;
+	public ClientConnection(Socket clientSocket, int streamPort, String streamingOptions) {
+		this.connectedClientSocket = clientSocket;
 		this.streamPort = streamPort;
 		this.streamingOptions = streamingOptions;
 		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), this.vlcLibraryDatapath);
@@ -43,50 +44,59 @@ public class ClientConnection implements Runnable {
 
 	@Override
 	public void run() {
+		this.userLogin();
+		this.respondToClientCommands();
+	}
+	
+	private void userLogin() {
 		try {
-			outputToClient = new ObjectOutputStream(connectedClientSocket.getOutputStream());
-			inputFromClient = new ObjectInputStream(connectedClientSocket.getInputStream());
+			this.outputToClient = new ObjectOutputStream(connectedClientSocket.getOutputStream());
+			this.inputFromClient = new ObjectInputStream(connectedClientSocket.getInputStream());
 			this.clientIsConnected = true;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 		String userInput = "";
 		// Read user list
-		userListXMLreader reader = new userListXMLreader();
-		userList = reader.parseUserAccountList();
-		// Attempt login
-		Boolean isLoggedIn = false;
-		while (!isLoggedIn) {
+		userListXMLreader xmlReader = new userListXMLreader();
+		userList = xmlReader.parseUserAccountList();
+		userIsLoggedIn = false;
+		while (!userIsLoggedIn) {
 			try {
-				userInput = (String) read();
+				userInput = (String) readFromObjectStream();
 				String password = userInput;
-				userInput = (String) read();
+				userInput = (String) readFromObjectStream();
 				password += userInput;
 
 				for (UserAccount user : userList) {
 					// check for user name
 					if ((user.getUserNameID() + user.getPassword()).equals(password)) {
-						System.out.println("LOGIN SUCCEDED");
-						send("LOGIN SUCCEDED");
-						isLoggedIn = true;
-						// sending user account data to client
-						send(user);
+						System.out.println("LOGIN SUCCEDED"); //TODO put to task bar?
+						sendInObjectStream("LOGIN SUCCEDED");
+						this.userIsLoggedIn = true;
+						// sending user-specific account-data to client
+						sendInObjectStream(user);
 						break;
 					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (!isLoggedIn) {
-				System.out.println("LOGIN FAILED");
-				send("LOGIN FAILED");
+			if (!userIsLoggedIn) {
+				System.out.println("LOGIN FAILED"); //TODO put to task bar?
+				sendInObjectStream("LOGIN FAILED");
+				//TODO give the user feedback on what was wrong, eg was the password or username wrong
 			}
 		}
+	}
+	
+	private void respondToClientCommands() {
 		while (clientIsConnected) {
 			try {
-
-				userInput = (String) read();
-				System.out.println("Message recieved from client: " + userInput);
+				String userInput = "";
+				userInput = (String) readFromObjectStream();
+				System.out.println("Message recieved from client: " + userInput); //TODO put to task bar?
 
 				if (userInput == null) {
 					continue;
@@ -103,38 +113,40 @@ public class ClientConnection implements Runnable {
 					if (mediaPlayer != null) {
 						position = mediaPlayer.getPosition();
 					}
-					send(position);
+					sendInObjectStream(position);
 				} else if (userInput.equals("GETLIST")) {
 					sendVideoListToClient();
 				} else if (userInput.equals("STREAM")) {
 					String videoID = "";
-					videoID = (String) read();
+					videoID = (String) readFromObjectStream();
 					setUpMediaStream(videoID);
 				} else if (userInput.equals("STOP")) {
-					stop();
+					if (this.mediaPlayerFactory != null) {
+						this.mediaPlayer.stop();
+					}
 				} else if (userInput.equals("CLOSE")) {
 					break;
 				} else if (userInput.equals("STREAMPORT")) {
-					send(this.streamPort);
+					sendInObjectStream(this.streamPort);
 				} else if (userInput.equals("SKIP")) {
 					float videoPosition = 0;
-					videoPosition = (float) read();
+					videoPosition = (float) readFromObjectStream();
 					if (mediaPlayer != null && videoPosition > 0 && videoPosition < 1) {
 						mediaPlayer.setPosition(videoPosition);
 					}
 				} else if (userInput.equals("GET VIDEO COMMENTS")) {
-					String videoID = (String) read();
-					getVideoList();
+					String videoID = (String) readFromObjectStream();
+					readVideoList();
 					for (VideoFile video : videoList) {
 						if (video.getID().equals(videoID)) {
-							send(video.getPublicCommentsList());
+							sendInObjectStream(video.getPublicCommentsList());
 							break;
 						}
 					}
 				} else if (userInput.equals("COMMENT")) {
-					String videoID = (String) read();
-					String comment = (String) read();
-					getVideoList();
+					String videoID = (String) readFromObjectStream();
+					String comment = (String) readFromObjectStream();
+					readVideoList();
 					for (VideoFile video : videoList) {
 						if (video.getID().equals(videoID)) {
 							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
@@ -156,7 +168,6 @@ public class ClientConnection implements Runnable {
 						this.mediaPlayer.release();
 						this.mediaPlayerFactory.release();
 					}
-
 					this.clientIsConnected = false;
 				} else {
 					// No action appears necessary
@@ -168,80 +179,71 @@ public class ClientConnection implements Runnable {
 		}
 	}
 
-	private void send(Object output) {
+	private void sendInObjectStream(Object outputObject) {
 		try {
-			outputToClient.writeObject(output);
+			outputToClient.writeObject(outputObject);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public Object read() {
-		Object obj = null;
+	public Object readFromObjectStream() {
+		Object inputObject = null;
 		try {
-			obj = inputFromClient.readObject();
+			inputObject = inputFromClient.readObject();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return obj;
+		return inputObject;
 	}
 
 	/**
 	 * Reads the xml video list
 	 * 
 	 * @return
-	 * 
-	 * @return
 	 */
-	protected void getVideoList() {
-		getVideoList(this.xmlListDatapath);
+	protected void readVideoList() {
+		readVideoList(this.xmlListDatapath);
 	}
 
 	// Used for testing when other lists are used and checked.
-	protected void getVideoList(String fileLocation) {
-		videoListParser reader = new videoListParser(fileLocation);
-		List<VideoFile> tempvideoList = reader.parseVideoList();
+	protected void readVideoList(String fileLocation) {  
+		videoListParser xmlReader = new videoListParser(fileLocation); 
+		List<VideoFile> tempvideoList = xmlReader.parseVideoList();
 		this.videoList = tempvideoList;
 	}
 
-	public void sendVideoListToClient() {
-		getVideoList();
-		send(this.videoList);
+	public void sendVideoListToClient() { //For testing only..
+		readVideoList();
+		sendInObjectStream(this.videoList);
 	}
 
 	private void setUpMediaStream(String desiredVideoID) {
-		if (mediaPlayerFactory != null) {
-			mediaPlayer.stop();
-			mediaPlayerFactory.release();
-			mediaPlayer.release();
-		}
-		
-		String filenameVideo = getVideoNameFromID(desiredVideoID);
-
-		mediaPlayerFactory = new MediaPlayerFactory(this.videoRepositoryDatapath + filenameVideo);
-		mediaPlayer = mediaPlayerFactory.newHeadlessMediaPlayer();
-		mediaPlayer.playMedia(videoRepositoryDatapath + filenameVideo, this.streamingOptions, ":no-sout-rtp-sap",
-				":no-sout-standardsap", ":sout-all", ":sout-keep");
-		send(mediaPlayer.getLength());
-	}
-
-	/**
-	 * Tests if a stream is running and stops it if it is running.
-	 */
-	private void stop() {
 		if (this.mediaPlayerFactory != null) {
 			this.mediaPlayer.stop();
+			this.mediaPlayerFactory.release();
+			this.mediaPlayer.release();
 		}
+		
+		String videoFilename = getVideoNameFromID(desiredVideoID);
+
+		this.mediaPlayerFactory = new MediaPlayerFactory(this.videoRepositoryDatapath + videoFilename);
+		this.mediaPlayer = this.mediaPlayerFactory.newHeadlessMediaPlayer();
+		this.mediaPlayer.playMedia(this.videoRepositoryDatapath + videoFilename, this.streamingOptions, 
+				":no-sout-rtp-sap",
+				":no-sout-standardsap", 
+				":sout-all", ":sout-keep");
+		sendInObjectStream(this.mediaPlayer.getLength());
 	}
 
 	protected String getVideoNameFromID(String videoID) {
-		getVideoList();
-		for (VideoFile video : videoList) {
+		readVideoList(); //TODO can this be exchanged with this.videoList??
+		for (VideoFile video : this.videoList) {
 			if (video.getID().equals(videoID)) {
 				return video.getFilename();
 			}
 		}
-		return "";
+		return ""; //TODO return an error of some kind?
 	}
 }

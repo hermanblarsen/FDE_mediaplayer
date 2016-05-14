@@ -41,6 +41,7 @@ public class CommentWindow extends JFrame{
 		
 		getContentPane().setLayout(null);
 		btnComment = new JButton("Submit");
+		
 		btnComment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				//test that comment box is not empty

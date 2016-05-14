@@ -14,6 +14,8 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import src.server.UserAccount;
 import src.server.VideoFile;
@@ -84,7 +86,8 @@ public class Client extends JFrame {
 	private JPanel statusPanel;
 	private JTextPane clientStatusBar;
 	private JTable listTable;
-	private VideoTableModel listVideoTableModel;
+	private VideoTableModel listTableModel;
+	private TableRowSorter<VideoTableModel> listTableRowSorter;
 
 	private JSlider positionTimeSlider;
 	private Timer updateTimer = new Timer();
@@ -100,6 +103,8 @@ public class Client extends JFrame {
 	private JButton playPauseButton;
 	private JButton stopButton;
 	private DefaultFullScreenStrategy fullScreenStrategy;
+	private JScrollPane listScrollPanel;
+	private Boolean showListGrid;
 	
 
 	class ModifiedTimerTask extends TimerTask {
@@ -182,14 +187,45 @@ public class Client extends JFrame {
 		searchField = new JTextField();
 		listViewNorthPanel.add(searchField, BorderLayout.CENTER);
 		searchField.setColumns(10);
+		
+		
+		searchField.getDocument().addDocumentListener(new DocumentListener() {
+			
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				String searchText = searchField.getText().trim();
+				
+				if (searchText.length()==0) {
+					listTableRowSorter.setRowFilter(null);
+				}else {
+					listTableRowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
+				}
+			}
+			
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				String searchText = searchField.getText().trim();
+				
+				if (searchText.length()==0) {
+					listTableRowSorter.setRowFilter(null);
+				}else {
+					listTableRowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
+				}
+			}
+			
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
 
 		JButton searchButton = new JButton("Search");
 		searchButton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Update the list to display titles containing the search
-				// string
+				
 
 			}
 		});
@@ -200,14 +236,12 @@ public class Client extends JFrame {
 		listViewWestPanel.setLayout(new BorderLayout(0, 0));
 		contentPane.add(tabbedPane);
 
-		JScrollPane listScrollPanel = new JScrollPane();
+		listScrollPanel = new JScrollPane();
 		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
 
-		listVideoTableModel = new VideoTableModel();
-		listTable = new JTable(listVideoTableModel);
-		listTable.setShowGrid(false);
-		// listTable.getTableHeader().setEnabled(false);
-		listScrollPanel.setViewportView(listTable);
+		//listTable = new JTable(); //TODO List Shait
+		
+		
 
 		JButton btnComment = new JButton("Comment");
 		btnComment.addActionListener(new ActionListener() {
@@ -230,6 +264,7 @@ public class Client extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				send("STREAM");
+				playPauseButton.setText("Pause");
 				updateSliderPositionTask();
 				sendSelectedVideo();
 				tabbedPane.setSelectedIndex(2);
@@ -626,8 +661,7 @@ public class Client extends JFrame {
 				send("CLOSECONNECTION");
 				mediaPlayerComponent.release();
 				closeSockets();
-				// TODO might need to add more closing stuff here, eg sockets
-				// also possibly make it dependant on closing something else....
+				// TODO might need to add more closing stuff here
 			}
 		});
 	}
@@ -727,9 +761,25 @@ public class Client extends JFrame {
 	}
 
 	public void updateVideoList() {
-		// this.listVideoTableModel = new
-		// VideoTableModel(this.videoList.size());
-		// this.listTable = new JTable(this.listVideoTableModel);
+		showListGrid = true;
+		
+		
+		
+		listTableModel = new VideoTableModel(this.videoList.size());
+		
+		listTableRowSorter = new TableRowSorter<>(listTableModel);
+		
+		
+		
+		
+		listTable = new JTable(listTableModel);
+		
+		listTable.setRowSorter(listTableRowSorter);
+		
+		//listTable.setAutoCreateRowSorter(true);
+		listScrollPanel.setViewportView(listTable);
+		listTable.setShowGrid(showListGrid);
+		listTable.getTableHeader().setReorderingAllowed(false);
 
 		int rowCounter = 0;
 		for (VideoFile eachVideo : this.videoList) {
@@ -744,7 +794,6 @@ public class Client extends JFrame {
 
 		this.listTable.updateUI();
 		validate();
-
 	}
 
 	private void sendSelectedVideo() {

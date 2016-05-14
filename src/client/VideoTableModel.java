@@ -6,18 +6,19 @@ public class VideoTableModel extends AbstractTableModel {
 	private String[] columnNames = 
 			{"Title",
 			"Duration",
-			"Favourite"};/*,
+			"Favourite",
 			"Tags",
 			"Last Watched",
 			"Genre",
-			"Rating"};*/
-	private Object[][] tableData = new Object[100][columnNames.length];
+			"Rating"};
+	private Object[][] tableData;// = new Object[100][columnNames.length];
+	
 	public VideoTableModel() {
 		
 	}
 	
-	public VideoTableModel(int rowNumberNeeded) {
-		this.tableData = new Object[rowNumberNeeded][columnNames.length];
+	public VideoTableModel(int numberOfVideoFiles) {
+		this.tableData = new Object[numberOfVideoFiles][columnNames.length];
 	}
 	
 	@Override
@@ -28,7 +29,6 @@ public class VideoTableModel extends AbstractTableModel {
 	@Override
 	public int getRowCount() {
 		return tableData.length;
-		//return 3;
 	}
 
 	public String getColumnName(int columnIndex) {
@@ -45,11 +45,6 @@ public class VideoTableModel extends AbstractTableModel {
 		this.tableData[rowIndex][columnIndex] = aValue;
 		fireTableCellUpdated(rowIndex, columnIndex);
 		fireTableDataChanged();
-		//super.setValueAt(aValue, rowIndex, columnIndex);
-	}
-	
-	public Class getColumnClass(int columnIndex) {
-		return getValueAt(0,columnIndex).getClass();
 	}
 	
 	public void setTableDataSize(int numberOfVideos) {

@@ -18,8 +18,7 @@ public class Server implements Runnable{
 	private List<ClientConnection> clientConnectionList = new ArrayList<ClientConnection>(); 
 	
 	public static void main(String[] args){
-		Server thisServer = new Server();
-		Thread serverThread = new Thread(thisServer);
+		Thread serverThread = new Thread(new Server());
 		serverThread.start();
 	}
 	
@@ -28,29 +27,21 @@ public class Server implements Runnable{
 		try {
 			serverSocket = new ServerSocket(communicationPort);
 		} catch (IOException e) {
-			System.out.println("ERROR! Unable to create server socket"); // Leave
-																			// out?
+			System.out.println("ERROR! Unable to create server socket"); //TODO Remove/change to status bar?
 			e.printStackTrace();
 		}
 		// Awaiting client connections
 		while (true) {
 			try {
 				// wait for client to connect to socket
-				System.out.println(
-						"Successfully opened socket on port: " + communicationPort + ", awaiting connection..."); // TODO
-																													// change
-																													// to
+				System.out.println("Successfully opened socket on port: " 
+							+ communicationPort + ", awaiting connection..."); //TODO change to status bar?
+				
 																													// status
 																													// bar
 				this.clientSocket = this.serverSocket.accept();
-				System.out.println("Successfully connected to client."); // TODO
-																			// change
-																			// to
-																			// status
-																			// bar
-				// streamPortList.add(initialStreamPort +
-				// streamPortList.size());
-
+				System.out.println("Successfully connected to client."); //TODO change to status bar?
+				
 				int newClientStreamPort = initialStreamPort + this.clientConnectionList.size();
 				streamingOptions = formatRtpStream(this.serverAddress, newClientStreamPort);
 
