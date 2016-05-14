@@ -17,7 +17,7 @@ public class ServerTest {
 	public void setUp() throws Exception {
 		server= new Server();
 		clientConnection = new ClientConnection(new Socket(), 5556, "");
-		videoList = clientConnection.getVideoList();
+		//videoList = clientConnection.getVideoList();
 		videoFile0 = videoList.get(0);
 	}
 
