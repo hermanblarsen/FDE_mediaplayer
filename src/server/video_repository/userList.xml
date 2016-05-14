@@ -2,18 +2,33 @@
 <userList version="sample">
     <User id="UserName1">
         <password>Password1</password>
+		<videoList>
+			<video id="20120213a2">
+				<favourite>true</favourite>
+				<percentageWatched>0.3</percentageWatched>
+				<rating>3</rating>
+			</video>
+		</videoList>
     </User>
 	<User id="UserName2">
         <password>Password2</password>
+		<videoList>
+		</videoList>
     </User>
 	<User id="UserName3">
         <password>Password3</password>
+		<videoList>
+		</videoList>
     </User>
 	<User id="UserName4">
         <password>Password4</password>
+		<videoList>
+		</videoList>
     </User>
 	<User id="">
         <password></password>
+		<videoList>
+		</videoList>
     </User>
 	
 </userList>

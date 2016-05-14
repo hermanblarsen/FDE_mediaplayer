@@ -11,9 +11,29 @@ public class VideoFile implements Serializable {
 	private String filename;
 	private Boolean isFavourite;
 	private int durationInSeconds;
-	protected int publicRating;
-	protected List<String> publicCommentsList; 
+	private int publicRating;//the average of all ratings
+	private int userRating;//the individual rating of the user
+	private float percentageWatched = 0;
+	private List<String> publicCommentsList; 
 
+	
+	public float getPercentageWatched() {
+		return percentageWatched;
+	}
+	public void setPercentageWatched(float percentageWatched) {
+		if(percentageWatched < 1 && percentageWatched >= 0){
+			this.percentageWatched = percentageWatched;
+		}else {
+			this.percentageWatched = 0;
+		}
+	}
+	
+	public int getUserRating() {
+		return userRating;
+	}
+	public void setUserRating(int userRating) {
+		this.userRating = userRating;
+	}
 	
 	/**
 	 * @return the iD
