@@ -116,57 +116,69 @@ public class ClientConnection implements Runnable {
 			}
 			if(clientOutput instanceof String) {
 				clientCommandString = (String) clientOutput;
+				System.out.println("Message recieved from client: " + clientCommandString); //TODO put to task bar?
 			}
 			
-			if (clientCommandString.equals("PAUSE")) {
-				if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-					mediaPlayer.pause();
-				}
-			} else if (clientCommandString.equals("PLAY")) {
+			switch (clientCommandString) {
+			case "PLAY":
 				if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
 					mediaPlayer.play();
 				} 
-			} else if (clientCommandString.equals("STREAM POSITION")) {
+				break;
+			case "PAUSE":
+				if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+					mediaPlayer.pause();
+				}
+				break;
+			case "STOP":
+				if (this.mediaPlayerFactory != null) {
+					this.mediaPlayer.stop();
+				}
+				break;
+			case "STREAM POSITION":
 				float position = 0;
 				if (mediaPlayer != null) {
 					position = mediaPlayer.getPosition();
 				}
 				sendThroughObjectStream(position);
-			} else if (clientCommandString.equals("GETLIST")) {
+				break;
+			case "GETLIST":
 				sendVideoListToClient();
-			} else if (clientCommandString.equals("STREAM")) {
+				break;	
+			case "STREAM":
 				String videoID = "";
 				videoID = (String) readFromObjectStream();
 				setUpMediaStream(videoID);
-			} else if (clientCommandString.equals("STOP")) {
-				if (this.mediaPlayerFactory != null) {
-					this.mediaPlayer.stop();
-				}
-			} else if (clientCommandString.equals("CLOSE")) {
+				break;	
+			case "CLOSE":
+				System.out.println("Command CLOSE was used");
 				break;
-			} else if (clientCommandString.equals("STREAMPORT")) {
+			case "STREAMPORT":
 				sendThroughObjectStream(this.streamPort);
-			} else if (clientCommandString.equals("SKIP")) {
-				float videoPosition = 0;
-				videoPosition = (float) readFromObjectStream();
-				if (mediaPlayer != null && videoPosition > 0 && videoPosition < 1) {
-					mediaPlayer.setPosition(videoPosition);
+				break;	
+			case "SKIP":
+				float videoPositionSlider = 0;
+				videoPositionSlider = (float) readFromObjectStream();
+				if (mediaPlayer != null && videoPositionSlider > 0 && videoPositionSlider < 1) {
+					mediaPlayer.setPosition(videoPositionSlider);
 				}
-			} else if (clientCommandString.equals("GET VIDEO COMMENTS")) {
-				String videoID = (String) readFromObjectStream();
+				break;
+			case "GET VIDEO COMMENTS":
+				String selectedVideoID = (String) readFromObjectStream();
 				readVideoList();
 				for (VideoFile video : videoList) {
-					if (video.getID().equals(videoID)) {
+					if (video.getID().equals(selectedVideoID)) {
 						sendThroughObjectStream(video.getPublicCommentsList());
 						break;
 					}
 				}
-			} else if (clientCommandString.equals("COMMENT")) {
-				String videoID = (String) readFromObjectStream();
+				break;	
+			case "COMMENT":
+				String videoIdToComment = (String) readFromObjectStream();
 				String comment = (String) readFromObjectStream();
 				readVideoList();
 				for (VideoFile video : videoList) {
-					if (video.getID().equals(videoID)) {
+					if (video.getID().equals(videoIdToComment)) {
 						ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
 						// if no comments list exists, create one
 						if (commentsList == null) {
@@ -174,18 +186,18 @@ public class ClientConnection implements Runnable {
 						}
 						commentsList.add(comment);
 						video.setPublicCommentsList(commentsList);
-
 						break;
 					}
 				}
 				videoListParser parser = new videoListParser(xmlListDatapath);
 				parser.writeVideoList(videoList);
-			} else if (clientCommandString.equals("CLOSECONNECTION")) {
+				break;
+			case "CLOSECONNECTION":
 				this.closeConnection();
-			} else {
-				// No action appears necessary
+				break;
+			default:
+				break;
 			}
-			continue;
 		}
 	}
 
