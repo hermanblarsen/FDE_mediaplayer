@@ -128,7 +128,7 @@ public class CommentWindow extends JFrame{
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Check for no choise. Then Convert button choise to a rating between 1 and 5. Then send the fucker.
+				// TODO Check for no choice. Then Convert button choice to a rating between 1 and 5. Then send the fucker.
 				
 			}
 		});
