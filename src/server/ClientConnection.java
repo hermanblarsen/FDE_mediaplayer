@@ -99,7 +99,8 @@ public class ClientConnection implements Runnable {
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				this.closeConnection();
+				break;
 			}
 			if (!userIsLoggedIn && !connectedClientSocket.isClosed()) {
 				System.out.println("LOGIN FAILED"); //TODO put to task bar?
@@ -212,12 +213,16 @@ public class ClientConnection implements Runnable {
 
 	public Object readFromObjectStream() {
 		Object inputObject = null;
+		
 		try {
 			inputObject = inputFromClient.readObject();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (IOException e) {
+			//client is disconected, disconnect everything.
+			this.closeConnection();
+		}catch (Exception e) {
+			
 		}
+		
 		return inputObject;
 	}
 
