@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class XMLReaderTest {
 	
-	private XMLReader reader;
+	/*private XMLReader reader;
 	private List<VideoFile> videoList;
 	private VideoFile videoFile0;
 	private VideoFile videoFile1;
@@ -55,6 +55,6 @@ public class XMLReaderTest {
 		assertTrue(videoFile2.getID().equals("20120102b4"));
 		assertTrue(videoFile2.getTitle().equals("Prometheus"));
 		assertTrue(videoFile2.getFilename().equals("prometheus-featureukFhp.mp4"));
-	}
+	}*/
 
 }

@@ -26,9 +26,8 @@
 		</videoList>
     </User>
 	<User id="">
-        <password></password>
-		<videoList>
-		</videoList>
+        <password>x</password>
+		<videoList>x</videoList>
     </User>
 	
 </userList>

@@ -86,11 +86,14 @@ public class ClientConnection implements Runnable {
 						break;
 					}
 				}
-			} catch (Exception e) {
+			} catch (IOException e) {
+				this.closeConnection();
+				break;
+			}catch (Exception e) {
 				this.closeConnection();
 				break;
 			}
-			if (!userIsLoggedIn) {
+			if (!userIsLoggedIn && !clientIsConnected) {
 				System.out.println("LOGIN FAILED"); //TODO put to task bar?
 				sendThroughObjectStream("LOGIN FAILED");
 				//TODO give the user feedback on what was wrong, eg was the password or username wrong
@@ -100,78 +103,86 @@ public class ClientConnection implements Runnable {
 	
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
-			String userInput = "";
-			userInput = (String) readFromObjectStream();
-			System.out.println("Message recieved from client: " + userInput); //TODO put to task bar?
-			
-			if (userInput == null) {
-				continue;
-			} else if (userInput.equals("PAUSE")) {
-				if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-					mediaPlayer.pause();
-				}
-			} else if (userInput.equals("PLAY")) {
-				if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-					mediaPlayer.play();
-				} 
-			} else if (userInput.equals("STREAM POSITION")) {
-				float position = 0;
-				if (mediaPlayer != null) {
-					position = mediaPlayer.getPosition();
-				}
-				sendThroughObjectStream(position);
-			} else if (userInput.equals("GETLIST")) {
-				sendVideoListToClient();
-			} else if (userInput.equals("STREAM")) {
-				String videoID = "";
-				videoID = (String) readFromObjectStream();
-				setUpMediaStream(videoID);
-			} else if (userInput.equals("STOP")) {
-				if (this.mediaPlayerFactory != null) {
-					this.mediaPlayer.stop();
-				}
-			} else if (userInput.equals("CLOSE")) {
-				break;
-			} else if (userInput.equals("STREAMPORT")) {
-				sendThroughObjectStream(this.streamPort);
-			} else if (userInput.equals("SKIP")) {
-				float videoPosition = 0;
-				videoPosition = (float) readFromObjectStream();
-				if (mediaPlayer != null && videoPosition > 0 && videoPosition < 1) {
-					mediaPlayer.setPosition(videoPosition);
-				}
-			} else if (userInput.equals("GET VIDEO COMMENTS")) {
-				String videoID = (String) readFromObjectStream();
-				readVideoList();
-				for (VideoFile video : videoList) {
-					if (video.getID().equals(videoID)) {
-						sendThroughObjectStream(video.getPublicCommentsList());
-						break;
+			String clientOutput = "";
+			try {
+				clientOutput = (String) readFromObjectStream();
+				System.out.println("Message recieved from client: " + clientOutput); //TODO put to task bar?
+				
+				if (clientOutput == null) {
+					continue;
+				} else if (clientOutput.equals("PAUSE")) {
+					if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+						mediaPlayer.pause();
 					}
-				}
-			} else if (userInput.equals("COMMENT")) {
-				String videoID = (String) readFromObjectStream();
-				String comment = (String) readFromObjectStream();
-				readVideoList();
-				for (VideoFile video : videoList) {
-					if (video.getID().equals(videoID)) {
-						ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
-						// if no comments list exists, create one
-						if (commentsList == null) {
-							commentsList = new ArrayList<String>();
+				} else if (clientOutput.equals("PLAY")) {
+					if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+						mediaPlayer.play();
+					} 
+				} else if (clientOutput.equals("STREAM POSITION")) {
+					float position = 0;
+					if (mediaPlayer != null) {
+						position = mediaPlayer.getPosition();
+					}
+					sendThroughObjectStream(position);
+				} else if (clientOutput.equals("GETLIST")) {
+					sendVideoListToClient();
+				} else if (clientOutput.equals("STREAM")) {
+					String videoID = "";
+					videoID = (String) readFromObjectStream();
+					setUpMediaStream(videoID);
+				} else if (clientOutput.equals("STOP")) {
+					if (this.mediaPlayerFactory != null) {
+						this.mediaPlayer.stop();
+					}
+				} else if (clientOutput.equals("CLOSE")) {
+					break;
+				} else if (clientOutput.equals("STREAMPORT")) {
+					sendThroughObjectStream(this.streamPort);
+				} else if (clientOutput.equals("SKIP")) {
+					float videoPosition = 0;
+					videoPosition = (float) readFromObjectStream();
+					if (mediaPlayer != null && videoPosition > 0 && videoPosition < 1) {
+						mediaPlayer.setPosition(videoPosition);
+					}
+				} else if (clientOutput.equals("GET VIDEO COMMENTS")) {
+					String videoID = (String) readFromObjectStream();
+					readVideoList();
+					for (VideoFile video : videoList) {
+						if (video.getID().equals(videoID)) {
+							sendThroughObjectStream(video.getPublicCommentsList());
+							break;
 						}
-						commentsList.add(comment);
-						video.setPublicCommentsList(commentsList);
-
-						break;
 					}
+				} else if (clientOutput.equals("COMMENT")) {
+					String videoID = (String) readFromObjectStream();
+					String comment = (String) readFromObjectStream();
+					readVideoList();
+					for (VideoFile video : videoList) {
+						if (video.getID().equals(videoID)) {
+							ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
+							// if no comments list exists, create one
+							if (commentsList == null) {
+								commentsList = new ArrayList<String>();
+							}
+							commentsList.add(comment);
+							video.setPublicCommentsList(commentsList);
+
+							break;
+						}
+					}
+					videoListParser parser = new videoListParser(xmlListDatapath);
+					parser.writeVideoList(videoList);
+				} else if (clientOutput.equals("CLOSECONNECTION")) {
+					this.closeConnection();
+				} else {
+					// No action appears necessary
 				}
-				videoListParser parser = new videoListParser(xmlListDatapath);
-				parser.writeVideoList(videoList);
-			} else if (userInput.equals("CLOSECONNECTION")) {
+			} catch (ClassNotFoundException e) {
+				// TODO 
+				e.printStackTrace();
+			} catch (IOException e) {
 				this.closeConnection();
-			} else {
-				// No action appears necessary
+				break;
 			}
 			continue;
 		}
@@ -199,17 +210,17 @@ public class ClientConnection implements Runnable {
 		}
 	}
 
-	public Object readFromObjectStream() {
+	public Object readFromObjectStream() throws ClassNotFoundException, IOException {
 		Object inputObject = null;
 		
-		try {
+		/*try {*/
 			inputObject = inputFromClient.readObject();
-		} catch (IOException e) {
-			//client is disconected, disconnect everything.
+		/*} catch (IOException e) {
+			//client is disconnected, disconnect clientConnection from everything.
 			this.closeConnection();
 		}catch (Exception e) {
 			
-		}
+		}*/
 		
 		return inputObject;
 	}
