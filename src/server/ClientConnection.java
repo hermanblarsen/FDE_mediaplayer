@@ -57,36 +57,24 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 		
-		String userInput = "";
+		Object userInput;
 		// Read user list
 		userListXMLreader xmlReader = new userListXMLreader();
 		userList = xmlReader.parseUserAccountList();
 		userIsLoggedIn = false;
 		while (!userIsLoggedIn) {
 			try {
-				userInput = (String) readFromObjectStream();
-				String usernameAndPassword = userInput;
-				
-				//TODO fix this shiat
-				if (usernameAndPassword.contains("CLOSECONNECTION")|| usernameAndPassword==null) {
-					this.closeConnection();
-					break;
+				//Obtain username and password from client
+				String usernameAndPassword = "";
+				userInput = readFromObjectStream();
+				if (userInput instanceof String){
+					usernameAndPassword = (String) userInput;
+				}
+				userInput = readFromObjectStream();
+				if (userInput instanceof String) {
+					usernameAndPassword += (String) userInput;
 				}
 				
-				userInput = (String) readFromObjectStream();
-				usernameAndPassword += userInput;
-				
-				if (usernameAndPassword.contains("CLOSECONNECTION")|| usernameAndPassword==null) {
-					this.closeConnection();
-					break;
-				}
-				
-				/*String prematureExitCheck = (String) readFromObjectStream();
-				if (prematureExitCheck.equals("CLOSECONNECTION")) {
-					this.closeConnection();
-					break;
-				}*/
-
 				for (UserAccount user : userList) {
 					// check for user name
 					if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
@@ -102,7 +90,7 @@ public class ClientConnection implements Runnable {
 				this.closeConnection();
 				break;
 			}
-			if (!userIsLoggedIn && !connectedClientSocket.isClosed()) {
+			if (!userIsLoggedIn) {
 				System.out.println("LOGIN FAILED"); //TODO put to task bar?
 				sendThroughObjectStream("LOGIN FAILED");
 				//TODO give the user feedback on what was wrong, eg was the password or username wrong
@@ -115,7 +103,7 @@ public class ClientConnection implements Runnable {
 			String userInput = "";
 			userInput = (String) readFromObjectStream();
 			System.out.println("Message recieved from client: " + userInput); //TODO put to task bar?
-
+			
 			if (userInput == null) {
 				continue;
 			} else if (userInput.equals("PAUSE")) {
