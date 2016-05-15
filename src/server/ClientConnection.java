@@ -63,30 +63,16 @@ public class ClientConnection implements Runnable {
 		userList = xmlReader.parseUserAccountList();
 		
 		userIsLoggedIn = false;
-		String usernameAndPassword="";
 		while (!userIsLoggedIn && clientIsConnected) {
-			
 			Object clientOutput = null;
-			String clientOutputString = "";
+			String usernameAndPassword = "";
 			
-			try {
-				clientOutput = readFromObjectStream();
-				if (clientOutput == null) {
-					System.out.println("Client is prematurely disconnected");
-					closeConnection();
-					break;
-				} else if (clientOutput instanceof String) {
-					clientOutputString = (String)clientOutput;
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			System.out.println("Login message received: " + clientOutputString);
-			
-			switch (clientOutputString) {
-			case "LOGIN":
-				usernameAndPassword = "";
+			clientOutput = readFromObjectStream();
+			if (clientOutput == null) {
+				System.out.println("Client is prematurely disconnected");
+				closeConnection();
+				break;
+			} else {
 				clientOutput = readFromObjectStream();
 			 	if (clientOutput instanceof String) {
 					usernameAndPassword = (String) clientOutput;
@@ -95,76 +81,78 @@ public class ClientConnection implements Runnable {
 				if (clientOutput instanceof String) {
 					usernameAndPassword += (String) clientOutput;
 				}
-					
-				for (UserAccount user : userList) {
-					// check for user name
-					if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
-						System.out.println("LOGIN SUCCEDED"); //TODO put to task bar?
-						sendThroughObjectStream("LOGIN SUCCEDED");
-						this.userIsLoggedIn = true;
-						// sending user-specific account-data to client
-						sendThroughObjectStream(user);
-						break;
-					}
-				}
-				
-				if (!userIsLoggedIn && clientIsConnected) {
-					System.out.println("LOGIN FAILED"); //TODO put to task bar?
-					sendThroughObjectStream("LOGIN FAILED");
-				}
-				break;
-			case "CLOSECONNECTION":
-				this.closeConnection();
-				break;
-			default:
-				break;
 			}
+			
+			for (UserAccount user : userList) {
+				// check for user name
+				if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
+					System.out.println("LOGIN SUCCEDED"); //TODO put to task bar?
+					sendThroughObjectStream("LOGIN SUCCEDED");
+					this.userIsLoggedIn = true;
+					// sending user-specific account-data to client
+					sendThroughObjectStream(user);
+					break;
+				}
+			}
+			
+			if (!userIsLoggedIn && clientIsConnected) {
+				System.out.println("LOGIN FAILED"); //TODO put to task bar?
+				sendThroughObjectStream("LOGIN FAILED");
+			}
+				
 		}
 	}
 
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
-			String userInput = "";
-			userInput = (String) readFromObjectStream();
-			System.out.println("Message recieved from client: " + userInput); //TODO put to task bar?
-
-			if (userInput == null) {
+			
+//			userInput = (String) readFromObjectStream();
+//			System.out.println("Message recieved from client: " + userInput); //TODO put to task bar?
+			String clientCommandString = "";
+			Object clientOutput = null;
+			clientOutput = readFromObjectStream();
+			if (clientOutput == null) {
 				continue;
-			} else if (userInput.equals("PAUSE")) {
+			}
+			if(clientOutput instanceof String) {
+				clientCommandString = (String) clientOutput;
+			}
+			
+			if (clientCommandString.equals("PAUSE")) {
 				if (mediaPlayer != null && mediaPlayer.isPlaying()) {
 					mediaPlayer.pause();
 				}
-			} else if (userInput.equals("PLAY")) {
+			} else if (clientCommandString.equals("PLAY")) {
 				if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
 					mediaPlayer.play();
 				} 
-			} else if (userInput.equals("STREAM POSITION")) {
+			} else if (clientCommandString.equals("STREAM POSITION")) {
 				float position = 0;
 				if (mediaPlayer != null) {
 					position = mediaPlayer.getPosition();
 				}
 				sendThroughObjectStream(position);
-			} else if (userInput.equals("GETLIST")) {
+			} else if (clientCommandString.equals("GETLIST")) {
 				sendVideoListToClient();
-			} else if (userInput.equals("STREAM")) {
+			} else if (clientCommandString.equals("STREAM")) {
 				String videoID = "";
 				videoID = (String) readFromObjectStream();
 				setUpMediaStream(videoID);
-			} else if (userInput.equals("STOP")) {
+			} else if (clientCommandString.equals("STOP")) {
 				if (this.mediaPlayerFactory != null) {
 					this.mediaPlayer.stop();
 				}
-			} else if (userInput.equals("CLOSE")) {
+			} else if (clientCommandString.equals("CLOSE")) {
 				break;
-			} else if (userInput.equals("STREAMPORT")) {
+			} else if (clientCommandString.equals("STREAMPORT")) {
 				sendThroughObjectStream(this.streamPort);
-			} else if (userInput.equals("SKIP")) {
+			} else if (clientCommandString.equals("SKIP")) {
 				float videoPosition = 0;
 				videoPosition = (float) readFromObjectStream();
 				if (mediaPlayer != null && videoPosition > 0 && videoPosition < 1) {
 					mediaPlayer.setPosition(videoPosition);
 				}
-			} else if (userInput.equals("GET VIDEO COMMENTS")) {
+			} else if (clientCommandString.equals("GET VIDEO COMMENTS")) {
 				String videoID = (String) readFromObjectStream();
 				readVideoList();
 				for (VideoFile video : videoList) {
@@ -173,7 +161,7 @@ public class ClientConnection implements Runnable {
 						break;
 					}
 				}
-			} else if (userInput.equals("COMMENT")) {
+			} else if (clientCommandString.equals("COMMENT")) {
 				String videoID = (String) readFromObjectStream();
 				String comment = (String) readFromObjectStream();
 				readVideoList();
@@ -192,7 +180,7 @@ public class ClientConnection implements Runnable {
 				}
 				videoListParser parser = new videoListParser(xmlListDatapath);
 				parser.writeVideoList(videoList);
-			} else if (userInput.equals("CLOSECONNECTION")) {
+			} else if (clientCommandString.equals("CLOSECONNECTION")) {
 				this.closeConnection();
 			} else {
 				// No action appears necessary
@@ -229,7 +217,7 @@ public class ClientConnection implements Runnable {
 			inputObject = inputFromClient.readObject();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		return inputObject;
 	}
