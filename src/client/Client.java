@@ -687,7 +687,7 @@ public class Client extends JFrame {
 		String passwordInput = new String(this.passwordField.getPassword());
 		login(usernameInput, passwordInput);
 	}
-	public boolean login(String usernameInput,String passwordInput) {
+	public boolean login(String usernameInput, String passwordInput) {
 		send(usernameInput);
 		send(passwordInput);
 		//obtain the response from the server to see if login succeeded 
