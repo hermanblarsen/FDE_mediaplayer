@@ -218,14 +218,25 @@ public class Client extends JFrame {
 		JButton btnComment = new JButton("Comment");
 		btnComment.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				String videoID = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
-				for (VideoFile eachVideo : videoList) {
-					if (listTable.getValueAt(listTable.getSelectedRow(), 0).equals(eachVideo.getTitle())) {
-						videoID = eachVideo.getID();
+				boolean noVideoSelected = false;
+				String videoTitle = "";
+				try {
+					videoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				} catch (Exception e) {
+					writeStatus("Select a video before commenting", Color.YELLOW);
+					noVideoSelected = true;
+				}				
+				if (!noVideoSelected) {
+					String videoID="";
+					for (VideoFile eachVideo : videoList) {
+						if (videoTitle.equals(eachVideo.getTitle())) {
+							videoID = eachVideo.getID();
+						}
 					}
+					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
+					CommentWindow commentsWindow = new CommentWindow(videoTitle, videoID, thisClient, currentUser);
+					commentsWindow.show();
 				}
-				CommentWindow commentsWindow = new CommentWindow(videoID, thisClient, currentUser);
-				commentsWindow.show();
 			}
 		});
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
@@ -241,6 +252,7 @@ public class Client extends JFrame {
 					selectedVideoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
 				} catch (Exception ee) {
 					exceptionEntered = true;
+					writeStatus("Select a video before streaming", Color.YELLOW);
 				}
 				if (!exceptionEntered) {
 					sendToServer("STREAM");
@@ -248,15 +260,11 @@ public class Client extends JFrame {
 					updateTimer.purge();
 					updateSliderPositionTask();
 					playPauseButton.setText("Pause");
-					
 					mediaPlayer.play();
-					
 					tabbedPane.setSelectedIndex(2);
 					//writeStatus("STREAMING...", Color.GREEN); //TODO remove?
 					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
-				} else {
-					writeStatus("Select a video first.", Color.YELLOW);
-				}
+				} 
 			}
 		});
 
@@ -497,6 +505,7 @@ public class Client extends JFrame {
 				"Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
 		statusPanel.add(statusBar, BorderLayout.WEST);
 		clientStatusBar = new JTextPane();
+		clientStatusBar.setToolTipText("Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
 		clientStatusBar.setEditable(false);
 		statusPanel.add(clientStatusBar, BorderLayout.CENTER);
 

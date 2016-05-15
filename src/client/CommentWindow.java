@@ -33,16 +33,17 @@ public class CommentWindow extends JFrame{
 	private JRadioButton rateRadioButton5;
 	private JButton rateButton;
 
-	public CommentWindow(String aSelectedVideo, Client aConnectedClient, UserAccount aConnectedUser) {
+	public CommentWindow(String aSelectedVideoTitle, String aSelectedVideoID, Client aConnectedClient, UserAccount aConnectedUser) {
 		this.setLocation(new Point(100, 100));
 		this.setPreferredSize(new Dimension(600, 430));
 		this.setResizable(false);
 		this.setMinimumSize(new Dimension(600, 430));
 		this.setMaximumSize(new Dimension(600, 430));
 		this.setAlwaysOnTop(true);
+		this.setTitle("Comments Field: " + aSelectedVideoTitle);
 		
 		this.connectedClient = aConnectedClient;
-		this.selectedVideo = aSelectedVideo;
+		this.selectedVideo = aSelectedVideoID;
 		this.connectedUser = aConnectedUser;
 		
 		getContentPane().setLayout(null);
