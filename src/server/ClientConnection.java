@@ -57,18 +57,23 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 		
-		String userInput = "";
+		
 		// Read user list
 		userListXMLreader xmlReader = new userListXMLreader();
 		userList = xmlReader.parseUserAccountList();
 		userIsLoggedIn = false;
 		while (!userIsLoggedIn) {
 			try {
-				userInput = (String) readFromObjectStream();
-				String usernameAndPassword = userInput;
+				String usernameAndPassword = "";
 				
-				userInput = (String) readFromObjectStream();
-				usernameAndPassword += userInput;
+				Object userInput = readFromObjectStream();
+				if (userInput instanceof String) {
+					usernameAndPassword = (String) userInput;
+				}
+				userInput = readFromObjectStream();
+				if (userInput instanceof String) {
+					usernameAndPassword += (String) userInput;
+				}
 				
 				for (UserAccount user : userList) {
 					// check for user name
@@ -84,7 +89,7 @@ public class ClientConnection implements Runnable {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (!userIsLoggedIn && !clientIsConnected) {
+			if (!userIsLoggedIn && clientIsConnected) {
 				System.out.println("LOGIN FAILED"); //TODO put to task bar?
 				sendThroughObjectStream("LOGIN FAILED");
 			}
