@@ -67,26 +67,9 @@ public class ClientConnection implements Runnable {
 				userInput = (String) readFromObjectStream();
 				String usernameAndPassword = userInput;
 				
-				//TODO fix this shiat
-				if (usernameAndPassword.contains("CLOSECONNECTION")|| usernameAndPassword==null) {
-					this.closeConnection();
-					break;
-				}
-				
 				userInput = (String) readFromObjectStream();
 				usernameAndPassword += userInput;
 				
-				if (usernameAndPassword.contains("CLOSECONNECTION")|| usernameAndPassword==null) {
-					this.closeConnection();
-					break;
-				}
-				
-				/*String prematureExitCheck = (String) readFromObjectStream();
-				if (prematureExitCheck.equals("CLOSECONNECTION")) {
-					this.closeConnection();
-					break;
-				}*/
-
 				for (UserAccount user : userList) {
 					// check for user name
 					if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
