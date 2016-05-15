@@ -7,11 +7,9 @@ public class VideoTableModel extends AbstractTableModel {
 			{"Title",
 			"Duration",
 			"Favourite",
-			"Tags",
-			"Last Watched",
-			"Genre",
+			"Percentage Watched",
 			"Rating"};
-	private Object[][] tableData;// = new Object[100][columnNames.length];
+	private Object[][] tableData;
 	
 	public VideoTableModel() {
 		

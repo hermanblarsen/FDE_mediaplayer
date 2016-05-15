@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,24 +58,44 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 		
-		
-		// Read user list
+		// Read list of user details.
 		userListXMLreader xmlReader = new userListXMLreader();
 		userList = xmlReader.parseUserAccountList();
+		
 		userIsLoggedIn = false;
-		while (!userIsLoggedIn) {
+		String usernameAndPassword="";
+		while (!userIsLoggedIn && clientIsConnected) {
+			
+			Object clientOutput = null;
+			String clientOutputString = "";
+			
 			try {
-				String usernameAndPassword = "";
-				
-				Object userInput = readFromObjectStream();
-				if (userInput instanceof String) {
-					usernameAndPassword = (String) userInput;
+				clientOutput = readFromObjectStream();
+				if (clientOutput == null) {
+					System.out.println("Client is prematurely disconnected");
+					closeConnection();
+					break;
+				} else if (clientOutput instanceof String) {
+					clientOutputString = (String)clientOutput;
 				}
-				userInput = readFromObjectStream();
-				if (userInput instanceof String) {
-					usernameAndPassword += (String) userInput;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			System.out.println("Login message received: " + clientOutputString);
+			
+			switch (clientOutputString) {
+			case "LOGIN":
+				usernameAndPassword = "";
+				clientOutput = readFromObjectStream();
+			 	if (clientOutput instanceof String) {
+					usernameAndPassword = (String) clientOutput;
 				}
-				
+				clientOutput = readFromObjectStream();
+				if (clientOutput instanceof String) {
+					usernameAndPassword += (String) clientOutput;
+				}
+					
 				for (UserAccount user : userList) {
 					// check for user name
 					if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
@@ -86,16 +107,21 @@ public class ClientConnection implements Runnable {
 						break;
 					}
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			if (!userIsLoggedIn && clientIsConnected) {
-				System.out.println("LOGIN FAILED"); //TODO put to task bar?
-				sendThroughObjectStream("LOGIN FAILED");
+				
+				if (!userIsLoggedIn && clientIsConnected) {
+					System.out.println("LOGIN FAILED"); //TODO put to task bar?
+					sendThroughObjectStream("LOGIN FAILED");
+				}
+				break;
+			case "CLOSECONNECTION":
+				this.closeConnection();
+				break;
+			default:
+				break;
 			}
 		}
 	}
-	
+
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
 			String userInput = "";

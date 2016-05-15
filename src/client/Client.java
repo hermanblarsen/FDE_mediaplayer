@@ -48,7 +48,6 @@ import java.util.TimerTask;
 public class Client extends JFrame {
 
 	private UserAccount currentUser = null;
-	private boolean currentUserLoggedIn;
 	protected boolean testMode = false;
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
@@ -141,7 +140,6 @@ public class Client extends JFrame {
 	}
 
 	public Client() {
-		currentUserLoggedIn = false;
 		setupGUI();
 		if(!testMode){
 			connectToTheServer(); // TODO Only for manualtesting
@@ -690,12 +688,11 @@ public class Client extends JFrame {
 		login(usernameInput, passwordInput);
 	}
 	public boolean login(String usernameInput, String passwordInput) {
-		//sendToServer("LOGIN");
+		sendToServer("LOGIN");
 		sendToServer(usernameInput);
 		sendToServer(passwordInput);
 		//obtain the response from the server to see if login succeeded 
 		String serverResponse = "";
-		
 		Object streamInput = readFromServer();
 		if(streamInput instanceof String){
 			serverResponse = (String) streamInput;
