@@ -84,10 +84,9 @@ public class ClientConnection implements Runnable {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (!userIsLoggedIn && !connectedClientSocket.isClosed()) {
+			if (!userIsLoggedIn && !clientIsConnected) {
 				System.out.println("LOGIN FAILED"); //TODO put to task bar?
 				sendThroughObjectStream("LOGIN FAILED");
-				//TODO give the user feedback on what was wrong, eg was the password or username wrong
 			}
 		}
 	}
