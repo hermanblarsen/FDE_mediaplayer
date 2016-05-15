@@ -48,6 +48,7 @@ import java.util.TimerTask;
 public class Client extends JFrame {
 
 	private UserAccount currentUser = null;
+	private boolean currentUserLoggedIn;
 	protected boolean testMode = false;
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
@@ -115,10 +116,10 @@ public class Client extends JFrame {
 				if (taskvalue > 0.99f) {
 					taskvalue = 0.99f;
 				}
-				send("PAUSE");
-				send("SKIP");
-				send(taskvalue);
-				send("PLAY");
+				sendToServer("PAUSE");
+				sendToServer("SKIP");
+				sendToServer(taskvalue);
+				sendToServer("PLAY");
 			}
 		}
 	};
@@ -140,6 +141,7 @@ public class Client extends JFrame {
 	}
 
 	public Client() {
+		currentUserLoggedIn = false;
 		setupGUI();
 		if(!testMode){
 			connectToTheServer(); // TODO Only for manualtesting
@@ -236,7 +238,7 @@ public class Client extends JFrame {
 		playButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				send("STREAM");
+				sendToServer("STREAM");
 				playPauseButton.setText("Pause");
 				updateSliderPositionTask();
 				sendSelectedVideo();
@@ -321,7 +323,7 @@ public class Client extends JFrame {
 					// function changes.
 					if (mediaPlayer.isPlaying()) {
 						mediaPlayer.pause();
-						send("PAUSE");
+						sendToServer("PAUSE");
 						if(updateSliderPositionTask!=null) {
 							updateSliderPositionTask.cancel();
 						}
@@ -330,7 +332,7 @@ public class Client extends JFrame {
 						
 					} else {
 						mediaPlayer.play();
-						send("PLAY");
+						sendToServer("PLAY");
 						//if(updateSliderPositionTask==null) {
 						updateTimer.purge();
 						updateSliderPositionTask();
@@ -339,7 +341,7 @@ public class Client extends JFrame {
 						playPauseButton.setText("Pause");
 					}
 				}else {
-					send("PLAY");
+					sendToServer("PLAY");
 					mediaPlayer.play();
 					//if(updateTimer.g==null) {
 					updateTimer.purge();
@@ -359,7 +361,7 @@ public class Client extends JFrame {
 				// check if there is anything to play
 
 				if (mediaPlayer.isPlayable()) {
-					send("STOP");
+					sendToServer("STOP");
 					mediaPlayer.stop();
 					playPauseButton.setText("Play From Start");
 					updateSliderPositionTask.cancel();
@@ -527,7 +529,7 @@ public class Client extends JFrame {
 	private void getVideoListFromServer() {
 		try {
 			// tell the server to send the videolist
-			send("GETLIST");
+			sendToServer("GETLIST");
 			try {
 				this.videoList = (List<VideoFile>) inputFromServer.readObject();
 			} catch (ClassCastException e) {
@@ -551,7 +553,7 @@ public class Client extends JFrame {
 	 * 
 	 * @param message
 	 */
-	public void send(Object object) {
+	public void sendToServer(Object object) {
 		try {
 			outputToServer.writeObject(object);
 		} catch (IOException e) {
@@ -559,7 +561,7 @@ public class Client extends JFrame {
 		}
 	}
 
-	public Object read() {
+	public Object readFromServer() {
 		Object inputObjectFromStream = null;
 		try {
 			inputObjectFromStream = inputFromServer.readObject();
@@ -631,7 +633,7 @@ public class Client extends JFrame {
 				mediaPlayer.release();
 				
 				if (!serverSocket.isClosed()) {
-					send("CLOSECONNECTION");
+					sendToServer("CLOSECONNECTION");
 					closeSockets();
 				}
 			}
@@ -648,9 +650,9 @@ public class Client extends JFrame {
 		updateSliderPositionTask = new TimerTask() {
 			@Override
 			public void run() {
-				send("STREAM POSITION");
+				sendToServer("STREAM POSITION");
 				float positionInTime = 0.0f;
-				Object inputFromServer = read();
+				Object inputFromServer = readFromServer();
 				if (inputFromServer instanceof Float) {
 					positionInTime = (float) inputFromServer;
 				}
@@ -688,18 +690,19 @@ public class Client extends JFrame {
 		login(usernameInput, passwordInput);
 	}
 	public boolean login(String usernameInput, String passwordInput) {
-		send(usernameInput);
-		send(passwordInput);
+		//sendToServer("LOGIN");
+		sendToServer(usernameInput);
+		sendToServer(passwordInput);
 		//obtain the response from the server to see if login succeeded 
 		String serverResponse = "";
 		
-		Object streamInput = read();
+		Object streamInput = readFromServer();
 		if(streamInput instanceof String){
 			serverResponse = (String) streamInput;
 		}
 		
 		if (serverResponse.equals("LOGIN SUCCEDED")) {
-			this.currentUser = (UserAccount) read();
+			this.currentUser = (UserAccount) readFromServer();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
 			userNameField.setBackground(Color.WHITE);
 			passwordField.setBackground(Color.WHITE);
@@ -710,8 +713,8 @@ public class Client extends JFrame {
 			loginButton.setEnabled(false);
 			this.validate();
 
-			send("STREAMPORT");
-			this.clientSpecificStreamPort = (int) read();
+			sendToServer("STREAMPORT");
+			this.clientSpecificStreamPort = (int) readFromServer();
 
 			// get the video list from the server
 			getVideoListFromServer();
@@ -762,7 +765,7 @@ public class Client extends JFrame {
 		for (VideoFile aVideo : this.videoList) {
 			if (this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(aVideo.getTitle())) {
 				//Send the video ID of the videofile object with a mathcing title as the first column in selected row
-				send(aVideo.getID());
+				sendToServer(aVideo.getID());
 			}
 		}
 	}

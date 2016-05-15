@@ -51,9 +51,9 @@ public class CommentWindow extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				//test that comment box is not empty
 				if(commentInputPane.getText().length() >= 1){
-					connectedClient.send("COMMENT");
-					connectedClient.send(selectedVideo);
-					connectedClient.send("[" + connectedUser.getUserNameID() + "]: " + commentInputPane.getText());
+					connectedClient.sendToServer("COMMENT");
+					connectedClient.sendToServer(selectedVideo);
+					connectedClient.sendToServer("[" + connectedUser.getUserNameID() + "]: " + commentInputPane.getText());
 					//resetting the comment pane
 					commentInputPane.setText("");
 					//obtaining the new updated comment list
@@ -136,13 +136,13 @@ public class CommentWindow extends JFrame{
 	}
 
 	private void getVideoComments() {
-		connectedClient.send("GET VIDEO COMMENTS");
-		connectedClient.send(selectedVideo);
+		connectedClient.sendToServer("GET VIDEO COMMENTS");
+		connectedClient.sendToServer(selectedVideo);
 		
 		//Make sure the object in the stream is the arraylist.
 		Object clientInput;
 		do {
-			clientInput = connectedClient.read();
+			clientInput = connectedClient.readFromServer();
 		} while(!(clientInput instanceof ArrayList<?>));
 		//TODO potential infinite loop, fix
 		
