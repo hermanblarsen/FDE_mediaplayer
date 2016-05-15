@@ -37,8 +37,6 @@ import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.embedded.DefaultFullScreenStrategy;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
-import uk.co.caprica.vlcj.test.basic.PlayerControlsPanel;
-
 import com.sun.jna.*;
 import javax.swing.table.TableRowSorter;
 
@@ -52,12 +50,11 @@ public class Client extends JFrame {
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
 	private int clientSpecificStreamPort;
-	private String host = "127.0.0.1";
+	private String hostAddress = "127.0.0.1";
 	private ObjectInputStream inputFromServer;
 	private ObjectOutputStream outputToServer;
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
 
-	private PlayerControlsPanel controlPanel;
 	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
 	private EmbeddedMediaPlayer mediaPlayer;
 
@@ -101,10 +98,10 @@ public class Client extends JFrame {
 	
 
 	class ModifiedTimerTask extends TimerTask {
-		private float taskvalue;
+		private float sliderPosition;
 
-		public ModifiedTimerTask(float value) {
-			taskvalue = value;
+		public ModifiedTimerTask(float changedSliderPosition) {
+			sliderPosition = changedSliderPosition;
 		}
 
 		@Override
@@ -112,12 +109,12 @@ public class Client extends JFrame {
 			// first check if there is playable media
 			if (mediaPlayer.isPlayable()) {
 				// Avoid end of file freeze-up
-				if (taskvalue > 0.99f) {
-					taskvalue = 0.99f;
+				if (sliderPosition > 0.99f) {
+					sliderPosition = 0.99f;
 				}
 				sendToServer("PAUSE");
 				sendToServer("SKIP");
-				sendToServer(taskvalue);
+				sendToServer(sliderPosition);
 				sendToServer("PLAY");
 			}
 		}
@@ -130,8 +127,8 @@ public class Client extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Client frame = new Client();
-					frame.setVisible(true);
+					Client newClient = new Client();
+					newClient.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -142,16 +139,17 @@ public class Client extends JFrame {
 	public Client() {
 		setupGUI();
 		if(!testMode){
-			connectToTheServer(); // TODO Only for manualtesting
+			connectToTheServer();
 		}
 	}
 
 	private void requestMovieStream() {
-		mediaPlayer.release();
+		if( mediaPlayer != null) {
+			mediaPlayer.release();
+		}
 		setUpMediaPLayer();
-		writeStatus("STREAMING...", Color.GREEN);
-		String media = "rtp://@127.0.0.1:" + clientSpecificStreamPort;
-		mediaPlayer.playMedia(media);
+		String mediaStreamAddress = "rtp://@127.0.0.1:" + clientSpecificStreamPort;
+		mediaPlayer.playMedia(mediaStreamAddress);
 	}
 
 	/**
@@ -160,13 +158,14 @@ public class Client extends JFrame {
 	 */
 	private void setupGUI() {
 		// Setup a JFrame and a JPanel contentsPane
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 600, 400);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(contentPane);
-		contentPane.setLayout(new BorderLayout(0, 0));
-
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setTitle("SuperFlix");
+		this.setBounds(100, 100, 600, 400);
+		this.contentPane = new JPanel();
+		this.contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		this.setContentPane(contentPane);
+		this.contentPane.setLayout(new BorderLayout(0, 0));
+		
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 
 		listViewTab = new JPanel();
@@ -231,16 +230,33 @@ public class Client extends JFrame {
 		});
 		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
 
-		JButton playButton = new JButton("PLAY");
-		listViewWestPanel.add(playButton, BorderLayout.CENTER);
-		playButton.addActionListener(new ActionListener() {
+		JButton streamSelectedVideoButton = new JButton("STREAM");
+		listViewWestPanel.add(streamSelectedVideoButton, BorderLayout.CENTER);
+		streamSelectedVideoButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				sendToServer("STREAM");
-				playPauseButton.setText("Pause");
-				updateSliderPositionTask();
-				sendSelectedVideo();
-				tabbedPane.setSelectedIndex(2);
+				String selectedVideoTitle = "";
+				boolean exceptionEntered = false;
+				try {
+					selectedVideoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				} catch (Exception ee) {
+					exceptionEntered = true;
+				}
+				if (!exceptionEntered) {
+					sendToServer("STREAM");
+					sendSelectedVideo(selectedVideoTitle);
+					updateTimer.purge();
+					updateSliderPositionTask();
+					playPauseButton.setText("Pause");
+					
+					mediaPlayer.play();
+					
+					tabbedPane.setSelectedIndex(2);
+					//writeStatus("STREAMING...", Color.GREEN); //TODO remove?
+					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
+				} else {
+					writeStatus("Select a video first.", Color.YELLOW);
+				}
 			}
 		});
 
@@ -249,7 +265,7 @@ public class Client extends JFrame {
 		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
 		settingsTab.setLayout(null);
 
-		JLabel userNameLabel = new JLabel("Username:");
+		JLabel userNameLabel = new JLabel("Username: ");
 		userNameLabel.setBounds(0, 16, 87, 32);
 		settingsTab.add(userNameLabel);
 
@@ -258,7 +274,7 @@ public class Client extends JFrame {
 		settingsTab.add(userNameField);
 		userNameField.setColumns(10);
 
-		JLabel lblPassword = new JLabel("Password:");
+		JLabel lblPassword = new JLabel("Password: ");
 		lblPassword.setBounds(0, 64, 87, 20);
 		settingsTab.add(lblPassword);
 
@@ -341,10 +357,8 @@ public class Client extends JFrame {
 				}else {
 					sendToServer("PLAY");
 					mediaPlayer.play();
-					//if(updateTimer.g==null) {
 					updateTimer.purge();
 					updateSliderPositionTask();
-					//}
 					playPauseButton.setText("Pause");
 				}
 			}
@@ -369,7 +383,7 @@ public class Client extends JFrame {
 		});
 		subPanelControlMenu.add(stopButton);
 
-		JButton fullSkipBackButton = new JButton("<--");
+		/*JButton fullSkipBackButton = new JButton("<--");
 		subPanelControlMenu.add(fullSkipBackButton);
 
 		JButton skipBackButton = new JButton("<-");
@@ -379,7 +393,9 @@ public class Client extends JFrame {
 		subPanelControlMenu.add(skipButton);
 
 		JButton fullSkipButton = new JButton("-->");
-		subPanelControlMenu.add(fullSkipButton);
+		subPanelControlMenu.add(fullSkipButton);*/
+		
+		
 		JLabel timePlayingLabel = new JLabel("Time Remaining");
 		subPanelControlMenu.add(timePlayingLabel);
 
@@ -412,7 +428,7 @@ public class Client extends JFrame {
 		subPanelControlMenu.add(durationOfMovie);
 
 		fullScreenStrategy = new DefaultFullScreenStrategy(this);
-		JButton fullscreenButton = new JButton("Fullscreen");
+		JToggleButton fullscreenButton = new JToggleButton("Fullscreen");
 		fullscreenButton.addActionListener(new ActionListener() {
 
 			@Override
@@ -429,8 +445,8 @@ public class Client extends JFrame {
 
 		subPanelControlMenu.add(fullscreenButton);
 
-		Component verticalStrut = Box.createVerticalStrut(20);
-		mouseEventPanelControlMenu.add(verticalStrut);
+		Component verticalPlaceholder = Box.createVerticalStrut(20);
+		mouseEventPanelControlMenu.add(verticalPlaceholder);
 
 		JPanel mouseEventPanelAudioMenu = new JPanel();
 		mouseEventPanelAudioMenu.setOpaque(false);
@@ -444,8 +460,8 @@ public class Client extends JFrame {
 			}
 		});
 
-		Component horizontalStrut = Box.createHorizontalStrut(20);
-		mouseEventPanelAudioMenu.add(horizontalStrut);
+		Component horizontalPlaceholder = Box.createHorizontalStrut(20);
+		mouseEventPanelAudioMenu.add(horizontalPlaceholder);
 
 		subPanelAudioMenu = new JPanel();
 		mouseEventPanelAudioMenu.add(subPanelAudioMenu);
@@ -486,7 +502,8 @@ public class Client extends JFrame {
 
 		this.setPreferredSize(new Dimension(800, 600));
 		this.tabbedPane.setSelectedIndex(1);
-		// disable the video list and video player tab untill the user logs in
+		
+		// disable the video list and video player tab until the user logs in
 		this.tabbedPane.setEnabledAt(0, false);
 		this.tabbedPane.setEnabledAt(1, false);
 		this.tabbedPane.setEnabledAt(2, false);
@@ -501,23 +518,23 @@ public class Client extends JFrame {
 	 * Connects to the default host:port
 	 */
 	public void connectToTheServer() {
-		connectToTheServer(this.host, this.communicationPort);
+		connectToTheServer(this.hostAddress, this.communicationPort);
 	}
-	public void connectToTheServer(String host, int port) {
-		writeStatus(new String("Connecting to " + host + ":" + port + "..."), Color.YELLOW);
+	public void connectToTheServer(String specifiedHostName, int specifiedPortNumber) {
+		writeStatus(new String("Connecting to " + specifiedHostName + ":" + specifiedPortNumber + "..."), Color.YELLOW);
 		try {
-			this.serverSocket = new Socket(host, port);
+			this.serverSocket = new Socket(specifiedHostName, specifiedPortNumber);
 			// setting up the output stream
 			this.outputToServer = new ObjectOutputStream(this.serverSocket.getOutputStream());
 			this.inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
-			writeStatus(new String("Successfully connected to " + host + ":" + port), Color.GREEN);
+			writeStatus(new String("Successfully connected to " + specifiedHostName + ":" + specifiedPortNumber), Color.GREEN);
 			;
 		} catch (UnknownHostException e) {
-			writeStatus(new String("Unknown host, unable to connect to: " + host + "."), Color.RED);
+			writeStatus(new String("Unknown host, unable to connect to: " + specifiedHostName + "."), Color.RED);
 			;
 			System.exit(-1);
 		} catch (IOException e) {
-			writeStatus(new String("Couldn't open I/O connection " + host + ":" + port + "."), Color.RED);
+			writeStatus(new String("Couldn't open I/O connection " + specifiedHostName + ":" + specifiedPortNumber + "."), Color.RED);
 			;
 			System.exit(-1);
 		}
@@ -535,7 +552,7 @@ public class Client extends JFrame {
 				e.printStackTrace();
 			}
 		} catch (ClassNotFoundException e) {
-			writeStatus(new String("Class not found for incoming object(s)"), Color.RED); // TODO
+			writeStatus(new String("Class not found for incoming object(s)"), Color.RED);
 			e.printStackTrace();
 			System.exit(-1);
 		} catch (IOException e) {
@@ -564,10 +581,8 @@ public class Client extends JFrame {
 		try {
 			inputObjectFromStream = inputFromServer.readObject();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return inputObjectFromStream;
@@ -688,17 +703,18 @@ public class Client extends JFrame {
 		login(usernameInput, passwordInput);
 	}
 	public boolean login(String usernameInput, String passwordInput) {
-		sendToServer("LOGIN");
+		sendToServer("REQEUSTLOGIN");
 		sendToServer(usernameInput);
 		sendToServer(passwordInput);
+		
 		//obtain the response from the server to see if login succeeded 
-		String serverResponse = "";
-		Object streamInput = readFromServer();
-		if(streamInput instanceof String){
-			serverResponse = (String) streamInput;
+		String loginRequestAnswerString = "";
+		Object loginRequestAnswerObject = readFromServer();
+		if(loginRequestAnswerObject instanceof String){
+			loginRequestAnswerString = (String) loginRequestAnswerObject;
 		}
 		
-		if (serverResponse.equals("LOGIN SUCCEDED")) {
+		if (loginRequestAnswerString.equals("LOGINSUCCEDED")) {
 			this.currentUser = (UserAccount) readFromServer();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
 			userNameField.setBackground(Color.WHITE);
@@ -710,21 +726,21 @@ public class Client extends JFrame {
 			loginButton.setEnabled(false);
 			this.validate();
 
-			sendToServer("STREAMPORT");
+			sendToServer("REQUESTSTREAMPORT");
 			this.clientSpecificStreamPort = (int) readFromServer();
 
-			// get the video list from the server
+			// get the video list from the server and set up mediaStreaming at given received port
 			getVideoListFromServer();
-			setUpMediaPLayer();
 			requestMovieStream();
 			updateVideoList();
 
-			// enable and switch to the other tabs.
+			// enable other tabs and switch to the list view
 			tabbedPane.setEnabledAt(0, true);
 			tabbedPane.setEnabledAt(1, true);
 			tabbedPane.setEnabledAt(2, true);
 
 			tabbedPane.setSelectedIndex(0);
+			writeStatus(new String(this.currentUser.getUserNameID() + " connected to server " + this.hostAddress + ":" + this.communicationPort), Color.GREEN);
 			return true;
 		}else{
 			userNameField.setBackground(Color.RED);
@@ -758,9 +774,9 @@ public class Client extends JFrame {
 		validate();
 	}
 
-	private void sendSelectedVideo() {
+	private void sendSelectedVideo(String selectedVideoTitle) {
 		for (VideoFile aVideo : this.videoList) {
-			if (this.listTable.getValueAt(this.listTable.getSelectedRow(), 0).equals(aVideo.getTitle())) {
+			if (selectedVideoTitle.equals(aVideo.getTitle())) {
 				//Send the video ID of the videofile object with a mathcing title as the first column in selected row
 				sendToServer(aVideo.getID());
 			}
