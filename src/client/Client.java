@@ -84,7 +84,6 @@ public class Client extends JFrame {
 	private boolean sliderEventActive = true;
 	private TimerTask updateSliderPositionTask;
 	private TimerTask autoHideControlPanelsTask;
-	private TimerTask updateTableTask;
 
 	private ModifiedTimerTask skipTask;
 	private JButton playPauseButton;
@@ -184,7 +183,6 @@ public class Client extends JFrame {
 			@Override
 			public void removeUpdate(DocumentEvent e) {
 				String searchText = searchField.getText().trim();
-
 				if (searchText.length() == 0) {
 					listTableRowSorter.setRowFilter(null);
 				} else {
@@ -195,7 +193,6 @@ public class Client extends JFrame {
 			@Override
 			public void insertUpdate(DocumentEvent e) {
 				String searchText = searchField.getText().trim();
-
 				if (searchText.length() == 0) {
 					listTableRowSorter.setRowFilter(null);
 				} else {
@@ -215,8 +212,8 @@ public class Client extends JFrame {
 		listScrollPanel = new JScrollPane();
 		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
 
-		JButton btnComment = new JButton("Comment");
-		btnComment.addActionListener(new ActionListener() {
+		JButton commentButton = new JButton("Comment");
+		commentButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean noVideoSelected = false;
 				String videoTitle = "";
@@ -266,8 +263,10 @@ public class Client extends JFrame {
 					sendSelectedVideo(selectedVideoTitle);
 					positionTimeSlider.setValue(0);
 					updateSliderPositionTask();
+
 					playPauseButton.setText("Pause");
-					mediaPlayer.play();
+					playPlayer(); // TODO fix with stop and new video choice
+
 					tabbedPane.setEnabledAt(2, true);
 					tabbedPane.setSelectedIndex(2);
 					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":"
@@ -319,7 +318,7 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		listViewWestPanel.add(btnComment);
+		listViewWestPanel.add(commentButton);
 
 		settingsTab = new JPanel();
 		settingsTab.setToolTipText("");
@@ -362,9 +361,6 @@ public class Client extends JFrame {
 			}
 		});
 
-		/////////////////////////////////////////////////////////////////////////////////////////////
-		// Tab where the selected video will be displayed
-		/////////////////////////////////////////////////////////////////////////////////////////////
 		videoPlayerTab = new JPanel();
 		videoPlayerTab.setEnabled(false);
 		videoPlayerTab.setBackground(Color.BLACK);
@@ -406,22 +402,12 @@ public class Client extends JFrame {
 		playPauseButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// check if there is anything to play
-
-				if (mediaPlayer.isPlayable()) {
-					// depending on if the video is already playing the button
-					// function changes.
-					if (mediaPlayer.isPlaying()) {
-						pausePlayer();
-					} else {
-						playPlayer();
-					}
+				// depending on if the video is already playing the button
+				// function changes.
+				if (mediaPlayer.isPlaying()) {
+					pausePlayer();
 				} else {
-					sendToServer("PLAY");
-					mediaPlayer.play();
-					updateTimer.purge();
-					updateSliderPositionTask();
-					playPauseButton.setText("Pause");
+					playPlayer();
 				}
 			}
 		});
@@ -429,30 +415,12 @@ public class Client extends JFrame {
 
 		stopButton = new JButton("Stop");
 		stopButton.addActionListener(new ActionListener() {
-
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// check if there is anything to play
-
 				stopPlayer();
-
 			}
 		});
 		subPanelControlMenu.add(stopButton);
-
-		/*
-		 * JButton fullSkipBackButton = new JButton("<--");
-		 * subPanelControlMenu.add(fullSkipBackButton);
-		 * 
-		 * JButton skipBackButton = new JButton("<-");
-		 * subPanelControlMenu.add(skipBackButton);
-		 * 
-		 * JButton skipButton = new JButton("->");
-		 * subPanelControlMenu.add(skipButton);
-		 * 
-		 * JButton fullSkipButton = new JButton("-->");
-		 * subPanelControlMenu.add(fullSkipButton);
-		 */
 
 		JToggleButton fullscreenButton = new JToggleButton("Fullscreen");
 		fullscreenButton.addActionListener(new ActionListener() {
@@ -477,21 +445,16 @@ public class Client extends JFrame {
 		positionTimeSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				// created new TimerTask class so that i can pass in a value as
-				// argument.
-
-				// prevents event having any effect if the slider value is
-				// changed by code and not by user
 				if (sliderEventActive) {
 					// get the position of the slider as percentage
 					JSlider sliderTemp = (JSlider) e.getSource();
-					float value = ((float) sliderTemp.getValue()) / 100f;
+					float sliderValue = ((float) sliderTemp.getValue()) / 100f;
 
-					// Cancel the previous skiptask;
+					// Cancel the previous skiptask and schedule a new one
 					if (skipTask != null) {
 						skipTask.cancel();
 					}
-					skipTask = new ModifiedTimerTask(value);
+					skipTask = new ModifiedTimerTask(sliderValue);
 					updateTimer.schedule(skipTask, 250);
 				}
 			}
@@ -535,9 +498,9 @@ public class Client extends JFrame {
 		audioSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				JSlider newSliderValue = (JSlider) e.getSource();
-				int volumeValue = newSliderValue.getValue();
-				// check if video is actually playable
+				JSlider sliderTemp = (JSlider) e.getSource();
+				int volumeValue = sliderTemp.getValue();
+				
 				if (mediaPlayer.isPlayable()) {
 					mediaPlayer.setVolume(volumeValue);
 				}
@@ -551,10 +514,8 @@ public class Client extends JFrame {
 		contentPane.add(statusPanel, BorderLayout.SOUTH);
 		statusPanel.setLayout(new BorderLayout(0, 0));
 
-		JLabel statusBar = new JLabel("Status:");
-		statusBar.setToolTipText(
-				"Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
-		statusPanel.add(statusBar, BorderLayout.WEST);
+		JLabel statusBarLabel = new JLabel("Status:");
+		statusPanel.add(statusBarLabel, BorderLayout.WEST);
 		clientStatusBar = new JTextPane();
 		clientStatusBar.setToolTipText(
 				"Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
@@ -568,57 +529,6 @@ public class Client extends JFrame {
 		this.tabbedPane.setEnabledAt(0, false);
 		this.tabbedPane.setEnabledAt(2, false);
 		this.pack();// makes sure everything is displayable.
-	}
-
-	/////////////////////////////////////////////////////////////////////////////////////////////
-	// Methods used to set up the connection to the server
-	/////////////////////////////////////////////////////////////////////////////////////////////
-
-	private void pausePlayer() {
-		// check if the player is null
-		if (mediaPlayer != null) {
-			if (mediaPlayer.isPlaying()) {
-				sendToServer("PAUSE");
-				mediaPlayer.pause();
-				playPauseButton.setText("Play");
-			}
-			updateVideoListView();
-		}
-		if (updateSliderPositionTask != null) {
-			updateSliderPositionTask.cancel();
-		}
-
-	}
-
-	private void playPlayer() {
-		// check if the player is null
-		if (mediaPlayer != null) {
-			if (mediaPlayer.isPlayable()) {
-				sendToServer("PLAY");
-				mediaPlayer.play();
-				updateSliderPositionTask();
-				playPauseButton.setText("Pause");
-			}
-			updateVideoListView();
-		}
-	}
-
-	private void stopPlayer() {
-		if (mediaPlayer != null) {
-			if (mediaPlayer.isPlayable()) {
-				sendToServer("STOP");
-				mediaPlayer.stop();
-				playPauseButton.setText("Play From Start");
-
-				for (VideoFile aVideo : currentUser.getVideos()) {
-					if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
-						aVideo.setPercentageWatched(0);
-					}
-				}
-				updateSliderPositionTask.cancel();
-			}
-			updateVideoListView();
-		}
 	}
 
 	/**
@@ -641,25 +551,90 @@ public class Client extends JFrame {
 			passwordField.setEnabled(true);
 			loginButton.setEnabled(true);
 		} catch (UnknownHostException e) {
-			writeStatus(new String("Unknown host, unable to connect to: " + specifiedHostName + ". Trying to reconnect soon..."), Color.RED);
-			retryConnectionToServer();
-		} catch (IOException e) {
-			writeStatus(
-					new String("Couldn't open I/O connection " + specifiedHostName + ":" + specifiedPortNumber + ". Trying to reconnect soon..."),
+			writeStatus(new String(
+					"Unknown host, unable to connect to: " + specifiedHostName + ". Trying to reconnect soon..."),
 					Color.RED);
 			retryConnectionToServer();
+		} catch (IOException e) {
+			writeStatus(new String("Couldn't open I/O connection " + specifiedHostName + ":" + specifiedPortNumber
+					+ ". Trying to reconnect soon..."), Color.RED);
+			retryConnectionToServer();
 		}
-		//TODO retry connection button, potentially alter login button text???
 	}
-	
-	private void retryConnectionToServer(){
+
+	private void retryConnectionToServer() {
 		updateTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				connectToTheServer();
 			}
-		}, 5000);
+		}, 3000);
 	}
+
+	/*
+	 * Tries to log into the user account on the server with the data from the
+	 * textfields.
+	 */
+	public void login() {
+		String usernameInput = this.userNameField.getText().toString();
+		String passwordInput = new String(this.passwordField.getPassword());
+		login(usernameInput, passwordInput);
+	}
+
+	public boolean login(String usernameInput, String passwordInput) {
+		sendToServer("REQEUSTLOGIN");
+		sendToServer(usernameInput);
+		sendToServer(passwordInput);
+
+		// obtain the response from the server to see if login succeeded
+		String loginRequestAnswerString = "";
+		Object loginRequestAnswerObject = readFromServer();
+		if (loginRequestAnswerObject instanceof String) {
+			loginRequestAnswerString = (String) loginRequestAnswerObject;
+		}
+
+		if (loginRequestAnswerString.equals("LOGINSUCCEDED")) {
+			writeStatus("Loggin successfull, connecting...", Color.YELLOW);
+			this.currentUser = (UserAccount) readFromServer();
+
+			// reset fields to white in case the user had a failed login attempt
+			// whic hmade them red
+			userNameField.setBackground(Color.WHITE);
+			passwordField.setBackground(Color.WHITE);
+
+			// disable login buttons and fields.
+			userNameField.setEnabled(false);
+			passwordField.setEnabled(false);
+			loginButton.setEnabled(false);
+
+			sendToServer("REQUESTSTREAMPORT");
+			this.clientSpecificStreamPort = (int) readFromServer();
+
+			// get the video list from the server and set up mediaStreaming at
+			// given received port
+			getVideoListFromServer();
+			updateVideoListView();
+
+			// set up the media player and streaming port
+			setUpMediaPLayer();
+			String mediaStreamAddress = "rtp://@127.0.0.1:" + clientSpecificStreamPort;
+			mediaPlayer.playMedia(mediaStreamAddress);
+
+			// enable other tabs and switch to the list view
+			tabbedPane.setEnabledAt(0, true);
+			tabbedPane.setEnabledAt(1, true);
+			tabbedPane.setSelectedIndex(0);
+			writeStatus(new String(currentUser.getUserNameID() + " connected to: " + hostAddress + ":"
+					+ this.clientSpecificStreamPort), Color.GREEN);
+			return true;
+		} else {
+			userNameField.setBackground(Color.RED);
+			passwordField.setBackground(Color.RED);
+			writeStatus("LOGIN FAILED", Color.RED);
+		}
+		return false;
+	}
+
 	public void getVideoListFromServer() {
 		// tell the server to send the videolist
 		sendToServer("GETLIST");
@@ -671,6 +646,46 @@ public class Client extends JFrame {
 		writeStatus(new String("Reading video list complete."), Color.GREEN);
 		updateVideoListView();
 		validateVideoListContentsAndFormat();
+	}
+
+	public void updateVideoListView() {
+		showListGrid = true;
+		listTableModel = new VideoTableModel(this.videoList.size());
+		listTableRowSorter = new TableRowSorter<>(listTableModel);
+
+		listTable = new JTable(listTableModel);
+		listTable.setRowSorter(listTableRowSorter);
+		listTable.setShowGrid(showListGrid);
+		listTable.getTableHeader().setReorderingAllowed(false);
+		listScrollPanel.setViewportView(listTable);
+		// add user specific properties (such as favourited and rating) to the
+		// videoFiles
+		for (VideoFile userVideo : currentUser.getVideos()) {
+			String videoID = userVideo.getID();
+			for (VideoFile clientVideo : this.videoList) {
+				if (clientVideo.getID().equals(videoID)) {
+					// user has user specific fields for this video
+					clientVideo.setIsFavourite(userVideo.getIsFavourite());
+					clientVideo.setPercentageWatched(userVideo.getPercentageWatched());
+				}
+			}
+		}
+
+		int rowCounter = 0;
+		for (VideoFile aVideo : this.videoList) {
+			int columnCounter = 0;
+			this.listTable.setValueAt(aVideo.getTitle(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(aVideo.getDurationInSeconds(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(aVideo.getIsFavourite(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(aVideo.getPublicRating(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(aVideo.getPercentageWatched() * 100 + "%", rowCounter, columnCounter);
+			rowCounter++;
+		}
+		validate();
 	}
 
 	/**
@@ -703,26 +718,24 @@ public class Client extends JFrame {
 		boolean listIsValid = true;
 		// First make sure that there are actually any videos in the list.
 		if (this.videoList.isEmpty()) {
-			writeStatus("Could not get videos from the server :(, Sorry !", Color.RED);
+			writeStatus("Retrieved list is empty.", Color.RED);
 			listIsValid = false;
 		}
 		// For each of the videos make sure that the ID has the correct format
-		// and that the file
-		// extension is valid.
+		// and that the file extension is 'valid'.
 		for (VideoFile video : this.videoList) {
 			// check that the video ID is the right length
 			if (!(video.getID().length() == 10)) {
 				listIsValid = false;
+				writeStatus("VideoID's are invalid.", Color.RED);
 			} else if (!(video.getFilename().contains(".mp4") || video.getFilename().contains(".mpg"))) {
 				listIsValid = false;
+				writeStatus("Video files' corrupted.", Color.RED);
 			}
 		}
 		return listIsValid;
 	}
 
-	/////////////////////////////////////////////////////////////////////////////////////////////
-	// Methods used to set up the media player
-	/////////////////////////////////////////////////////////////////////////////////////////////
 	private void setUpMediaPLayer() {
 		this.setUpMediaPlayer(vlcLibraryDatapath);
 	}
@@ -754,8 +767,6 @@ public class Client extends JFrame {
 		closeConnection();
 	}
 
-	// closes all sockets to make sure that they can be used again if the client
-	// is run again.
 	public void closeConnection() {
 		if (serverSocket != null && !serverSocket.isClosed()) {
 			sendToServer("CLOSECONNECTION");
@@ -831,118 +842,54 @@ public class Client extends JFrame {
 		updateTimer.schedule(autoHideControlPanelsTask, 4000);
 	}
 
-	public void writeStatus(String statusMessage, Color statusColor) {
+	private void writeStatus(String statusMessage, Color statusColor) {
 		clientStatusBar.setText(statusMessage);
 		clientStatusBar.setBackground(statusColor);
 	}
 
-	/*
-	 * Tries to log into the user account on the server with the data from the
-	 * textfields.
-	 */
-	public void login() {
-		String usernameInput = this.userNameField.getText().toString();
-		String passwordInput = new String(this.passwordField.getPassword());
-		login(usernameInput, passwordInput);
-	}
-
-	public boolean login(String usernameInput, String passwordInput) {
-		sendToServer("REQEUSTLOGIN");
-		sendToServer(usernameInput);
-		sendToServer(passwordInput);
-
-		// obtain the response from the server to see if login succeeded
-		String loginRequestAnswerString = "";
-		Object loginRequestAnswerObject = readFromServer();
-		if (loginRequestAnswerObject instanceof String) {
-			loginRequestAnswerString = (String) loginRequestAnswerObject;
-		}
-
-		if (loginRequestAnswerString.equals("LOGINSUCCEDED")) {
-			writeStatus("Loggin successfull, connecting...", Color.YELLOW);
-			this.currentUser = (UserAccount) readFromServer();
-
-			// reset fields to white in case the user had a failed login attempt
-			// whic hmade them red
-			userNameField.setBackground(Color.WHITE);
-			passwordField.setBackground(Color.WHITE);
-
-			// disable login buttons and fields.
-			userNameField.setEnabled(false);
-			passwordField.setEnabled(false);
-			loginButton.setEnabled(false);
-
-			sendToServer("REQUESTSTREAMPORT");
-			this.clientSpecificStreamPort = (int) readFromServer();
-
-			// get the video list from the server and set up mediaStreaming at
-			// given received port
-			getVideoListFromServer();
-			requestMovieStream();
-			updateVideoListView();
-
-			// enable other tabs and switch to the list view
-			tabbedPane.setEnabledAt(0, true);
-			tabbedPane.setEnabledAt(1, true);
-			tabbedPane.setSelectedIndex(0);
-			writeStatus(new String(currentUser.getUserNameID() + " connected to: " + hostAddress + ":"
-					+ this.clientSpecificStreamPort), Color.GREEN);
-			return true;
-		} else {
-			userNameField.setBackground(Color.RED);
-			passwordField.setBackground(Color.RED);
-			writeStatus("LOGIN FAILED", Color.RED);
-		}
-		return false;
-	}
-
-	private void requestMovieStream() {
+	private void pausePlayer() {
+		// check if the player is null
 		if (mediaPlayer != null) {
-			mediaPlayer.release();
+			if (mediaPlayer.isPlaying()) {
+				sendToServer("PAUSE");
+				mediaPlayer.pause();
+				playPauseButton.setText("Play");
+			}
+			updateVideoListView();
 		}
-		setUpMediaPLayer();
-		String mediaStreamAddress = "rtp://@127.0.0.1:" + clientSpecificStreamPort;
-		mediaPlayer.playMedia(mediaStreamAddress);
+		if (updateSliderPositionTask != null) {
+			updateSliderPositionTask.cancel();
+		}
+
 	}
 
-	public void updateVideoListView() {
-		showListGrid = true;
-		listTableModel = new VideoTableModel(this.videoList.size());
-		listTableRowSorter = new TableRowSorter<>(listTableModel);
+	private void playPlayer() {
+		// check if the player is null
+		if (mediaPlayer != null) {
+			sendToServer("PLAY");
+			mediaPlayer.play();
+			updateSliderPositionTask();
+			playPauseButton.setText("Pause");
+			updateVideoListView();
+		}
+	}
 
-		listTable = new JTable(listTableModel);
-		listTable.setRowSorter(listTableRowSorter);
-		listTable.setShowGrid(showListGrid);
-		listTable.getTableHeader().setReorderingAllowed(false);
-		listScrollPanel.setViewportView(listTable);
-		// add user specific properties (such as favourited and rating) to the
-		// videoFiles
-		for (VideoFile userVideo : currentUser.getVideos()) {
-			String videoID = userVideo.getID();
-			for (VideoFile clientVideo : this.videoList) {
-				if (clientVideo.getID().equals(videoID)) {
-					// user has user specific fields for this video
-					clientVideo.setIsFavourite(userVideo.getIsFavourite());
-					clientVideo.setPercentageWatched(userVideo.getPercentageWatched());
+	private void stopPlayer() {
+		if (mediaPlayer != null) {
+			if (mediaPlayer.isPlayable()) {
+				sendToServer("STOP");
+				mediaPlayer.stop();
+				playPauseButton.setText("Play From Start");
+
+				for (VideoFile aVideo : currentUser.getVideos()) {
+					if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
+						aVideo.setPercentageWatched(0);
+					}
 				}
+				updateSliderPositionTask.cancel();
 			}
+			updateVideoListView();
 		}
-
-		int rowCounter = 0;
-		for (VideoFile aVideo : this.videoList) {
-			int columnCounter = 0;
-			this.listTable.setValueAt(aVideo.getTitle(), rowCounter, columnCounter);
-			columnCounter++;
-			this.listTable.setValueAt(aVideo.getDurationInSeconds(), rowCounter, columnCounter);
-			columnCounter++;
-			this.listTable.setValueAt(aVideo.getIsFavourite(), rowCounter, columnCounter);
-			columnCounter++;
-			this.listTable.setValueAt(aVideo.getPublicRating(), rowCounter, columnCounter);
-			columnCounter++;
-			this.listTable.setValueAt(aVideo.getPercentageWatched() * 100 + "%", rowCounter, columnCounter);
-			rowCounter++;
-		}
-		validate();
 	}
 
 	private void sendSelectedVideo(String selectedVideoTitle) {

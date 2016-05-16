@@ -22,14 +22,14 @@ import javax.xml.transform.stream.StreamResult;
 
 public class VideoListXmlParser {
 
-	private DOMParser parser;
-	private Document doc;
+	private DOMParser xmlParser;
+	private Document document;
 	private String videoListXmlDatapath = "serverRepository/videoList.xml";
 	
 	public VideoListXmlParser(String videoListPath){
-		parser = new DOMParser();
+		xmlParser = new DOMParser();
 	    try {
-			parser.parse(videoListPath);
+			xmlParser.parse(videoListPath);
 		} catch (SAXException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -37,13 +37,13 @@ public class VideoListXmlParser {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	    doc = parser.getDocument();
+	    document = xmlParser.getDocument();
 	}
 	
 	public List<VideoFile> parseVideoList(){
 		List<VideoFile> videoList = new ArrayList<VideoFile>();
 		//take structure appart
-		NodeList root = doc.getElementsByTagName("video");
+		NodeList root = document.getElementsByTagName("video");
 		for (int i = 0; i < root.getLength(); i++) {
 			VideoFile video = new VideoFile();
 			Element videoElement = (Element) root.item(i);
@@ -149,7 +149,5 @@ public class VideoListXmlParser {
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
 		}
-		
 	}
-	
 }

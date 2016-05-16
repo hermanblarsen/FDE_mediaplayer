@@ -47,8 +47,27 @@ public class ClientConnection implements Runnable {
 	@Override
 	public void run() {
 		// Read list of user details.
-		UserListXmlParser xmlReader = new UserListXmlParser();
-		this.userList = xmlReader.parseUserAccountList();
+		UserListXmlParser userXmlParser = new UserListXmlParser();
+		this.userList = userXmlParser.parseUserAccountList();
+		this.readVideoList();
+		for (VideoFile video : this.videoList){
+			String videoID = video.getID();
+			for(UserAccount userAccount : userList){
+				boolean userHasVideoInList = false;
+				for(VideoFile userVideo : userAccount.getVideos()){
+					if(userVideo.getID().equals(videoID)){
+						userHasVideoInList = true;
+						break;
+					}
+				}
+				if(!userHasVideoInList){
+					ArrayList<VideoFile> modifiedUserVideoList = (ArrayList<VideoFile>) userAccount.getVideos();
+					modifiedUserVideoList.add(video);
+					userAccount.setVideos(modifiedUserVideoList);
+				}
+			}
+		}
+		userXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
 		
 		this.userLogin();
 		this.respondToClientCommands();
@@ -62,8 +81,6 @@ public class ClientConnection implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		
 		
 		userIsLoggedIn = false;
 		while (!userIsLoggedIn && clientIsConnected) {
@@ -103,7 +120,6 @@ public class ClientConnection implements Runnable {
 				System.out.println("LOGIN FAILED");
 				sendThroughObjectStream("LOGINFAILED");
 			}
-				
 		}
 	}
 
@@ -114,10 +130,9 @@ public class ClientConnection implements Runnable {
 			clientOutput = readFromObjectStream();
 			if (clientOutput == null) {
 				continue;
-			}
-			if(clientOutput instanceof String) {
+			}else if (clientOutput instanceof String) {
 				clientCommandString = (String) clientOutput;
-				System.out.println("Message recieved from client: " + clientCommandString); //TODO Remove
+				System.out.println("Message recieved from client: " + clientCommandString); //TODO Remove before hand in
 			}
 			
 			switch (clientCommandString) {
@@ -161,6 +176,9 @@ public class ClientConnection implements Runnable {
 					mediaPlayer.setPosition(videoPositionSlider);
 				}
 				break;
+			case "CLOSECONNECTION":
+				this.closeConnection();
+				break;
 			case "GET VIDEO COMMENTS":
 				String selectedVideoID = (String) readFromObjectStream();
 				readVideoList();
@@ -172,11 +190,11 @@ public class ClientConnection implements Runnable {
 				}
 				break;	
 			case "COMMENT":
-				String videoIdToComment = (String) readFromObjectStream();
+				String commentedVideoId = (String) readFromObjectStream();
 				String comment = (String) readFromObjectStream();
 				readVideoList();
 				for (VideoFile video : videoList) {
-					if (video.getID().equals(videoIdToComment)) {
+					if (video.getID().equals(commentedVideoId)) {
 						ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
 						// if no comments list exists, create one
 						if (commentsList == null) {
@@ -188,9 +206,6 @@ public class ClientConnection implements Runnable {
 					}
 				}
 				updateVideoListXML();
-				break;
-			case "CLOSECONNECTION":
-				this.closeConnection();
 				break;
 			case "RATE":
 				//server now expects the videoID of the video that is being rated
@@ -204,15 +219,15 @@ public class ClientConnection implements Runnable {
 					//get the right video file from the video list
 					if (serverVideo.getID().equals(ratedVideoID)) {
 						//now check if the user allready has this video in his list
-						boolean userHasVideo = false;
+						boolean userVideoListContainsVideo = false;
 						for (Iterator iterator2 = modifiedUserVideoList.iterator(); iterator2.hasNext();) {
 							VideoFile userVideo = (VideoFile) iterator2.next();
 							if(userVideo.getID().equals(ratedVideoID)){
-								userHasVideo = true;
+								userVideoListContainsVideo = true;
 								break;
 							}
 						}
-						if (!userHasVideo) {
+						if (!userVideoListContainsVideo) {
 							modifiedUserVideoList.add(serverVideo);
 						}
 						break;
@@ -231,11 +246,10 @@ public class ClientConnection implements Runnable {
 						account = loggedInUser;
 					}
 				}
-				UserListXmlParser parser = new UserListXmlParser();
-				parser.writeUserListToXML((ArrayList<UserAccount>) userList);
+				UserListXmlParser userListXmlParser = new UserListXmlParser();
+				userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
 				//update the overall video rating 
 				updateVideoRating(ratedVideoID);
-				
 				break;
 			default:
 				break;
@@ -252,15 +266,15 @@ public class ClientConnection implements Runnable {
 		float globalRating = 0 ;
 		int numberOfUsersThatRatedVideo = 0;
 		for (UserAccount user : userList) {
+			//check if the user has rated this video
 			for (VideoFile userVideo : user.getVideos()) {
-				//check if the user has rated this video
 				if (userVideo.getID().equals(ratedVideoID)) {
 					globalRating += userVideo.getUserRating();
 					numberOfUsersThatRatedVideo += 1;
 				}
 			}
 		}
-		//now find the average rating
+		//now find the average public rating of the video
 		if (numberOfUsersThatRatedVideo > 0) {//prevent dividing by 0 error
 			globalRating = globalRating/((float)numberOfUsersThatRatedVideo);
 			//now change the rating of the video
@@ -321,7 +335,7 @@ public class ClientConnection implements Runnable {
 		this.videoList = tempvideoList;
 	}
 
-	public void sendVideoListToClient() { //For testing only..
+	public void sendVideoListToClient() {
 		readVideoList();
 		sendThroughObjectStream(this.videoList);
 	}
@@ -343,12 +357,12 @@ public class ClientConnection implements Runnable {
 	}
 
 	protected String getVideoNameFromID(String videoID) {
-		readVideoList(); //TODO can this be exchanged with this.videoList??
+		readVideoList();
 		for (VideoFile video : this.videoList) {
 			if (video.getID().equals(videoID)) {
 				return video.getFilename();
 			}
 		}
-		return ""; //TODO return an error of some kind?
+		return "";
 	}
 }

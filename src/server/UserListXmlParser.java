@@ -32,12 +32,14 @@ public class UserListXmlParser {
 		ArrayList<UserAccount> userList = new ArrayList<UserAccount>();
 		
 		try {
+			//Setting up document from XML file
 			File accountFile = new File(listOfUserDetailsDatapath);
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document document = dBuilder.parse(accountFile);
 			document.getDocumentElement().normalize();
 			
+			//Parsing of document begins
 			NodeList userNodeList = document.getElementsByTagName("User");
 			for (int counter = 0; counter < userNodeList.getLength(); counter++){
 				if(!(userNodeList.item(counter).getNodeType() == Node.ELEMENT_NODE)){
@@ -45,11 +47,11 @@ public class UserListXmlParser {
 				}
 				Node currentNode = userNodeList.item(counter);
 				Element element = (Element) currentNode;
-				String Username = element.getAttribute("id");
+				String username = element.getAttribute("id");
 				String password = element.getElementsByTagName("password").item(0).getTextContent();
 				
 				//create the new user account
-				UserAccount account = new UserAccount(Username, password);
+				UserAccount account = new UserAccount(username, password);
 				
 				//obtain the <videoList> element, which contains all <video> elements
 				Element videoListElement = (Element) element.getElementsByTagName("videoList").item(0);
@@ -75,19 +77,19 @@ public class UserListXmlParser {
 						if (!(videoChildren.item(ii).getNodeType() == Node.ELEMENT_NODE)) {
 							continue;
 						}
-						Element Tag = (Element) videoChildren.item(ii);
-						String tagName = Tag.getTagName();
+						Element tag = (Element) videoChildren.item(ii);
+						String tagName = tag.getTagName();
 						switch (tagName) {
 						case "favourite":
-							boolean favourite = Boolean.parseBoolean(Tag.getTextContent());
+							boolean favourite = Boolean.parseBoolean(tag.getTextContent());
 							tempVideo.setIsFavourite(favourite);
 							break;
 						case "percentageWatched":
-							float percentageWatched = Float.parseFloat(Tag.getTextContent());
+							float percentageWatched = Float.parseFloat(tag.getTextContent());
 							tempVideo.setPercentageWatched(percentageWatched);
 							break;
 						case "rating":
-							int rating = Integer.parseInt(Tag.getTextContent());
+							int rating = Integer.parseInt(tag.getTextContent());
 							tempVideo.setUserRating(rating);
 							break;
 						default:
@@ -127,12 +129,12 @@ public class UserListXmlParser {
 			
 			for (UserAccount user: userList) {
 				
-				Element User = doc.createElement("User");
-				User.setAttribute("id",user.getUserNameID());
+				Element userElement = doc.createElement("User");
+				userElement.setAttribute("id",user.getUserNameID());
 				
 				Element password = doc.createElement("password");
 				password.setTextContent(user.getPassword());
-				User.appendChild(password);
+				userElement.appendChild(password);
 				
 				Element videoList = doc.createElement("videoList");
 				for(VideoFile video : user.getVideos()){
@@ -153,8 +155,8 @@ public class UserListXmlParser {
 					
 					videoList.appendChild(videoElement);
 				}
-				User.appendChild(videoList);
-				rootElement.appendChild(User);
+				userElement.appendChild(videoList);
+				rootElement.appendChild(userElement);
 			}
 			
 			try {
