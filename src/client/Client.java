@@ -25,7 +25,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.*;
@@ -35,7 +34,6 @@ import java.awt.Dimension;
 
 import uk.co.caprica.vlcj.binding.LibVlc;
 import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
-import uk.co.caprica.vlcj.player.embedded.DefaultFullScreenStrategy;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import com.sun.jna.*;
@@ -44,8 +42,6 @@ import javax.swing.table.TableRowSorter;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.awt.GridLayout;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
 
 public class Client extends JFrame {
 
@@ -68,7 +64,6 @@ public class Client extends JFrame {
 	protected JComboBox<String> selectionBox;
 	protected JPanel subPanelControlMenu;
 	protected JPanel subPanelAudioMenu;
-	//protected JOptionPane errorOptionPane;
 	private JPanel listViewTab;
 	private JPanel settingsTab;
 	private JPanel videoPlayerTab;
@@ -82,18 +77,15 @@ public class Client extends JFrame {
 	private JTable listTable;
 	private VideoTableModel listTableModel;
 	private TableRowSorter<VideoTableModel> listTableRowSorter;
+	private VideoFile currentlyStreamingVideo;
 
 	private JSlider positionTimeSlider;
 	private Timer updateTimer = new Timer();
-	/*
-	 * used to temporarily disable the slider event when the slider value is
-	 * changed by code rather than by the user. the code changes the slider
-	 * value when a video is streaming in order to display the current position
-	 * of the stream.
-	 */
 	private boolean sliderEventActive = true;
 	private TimerTask updateSliderPositionTask;
 	private TimerTask autoHideControlPanelsTask;
+	private TimerTask updateTableTask;
+	
 	private ModifiedTimerTask skipTask;
 	private JButton playPauseButton;
 	private JButton stopButton;
@@ -101,6 +93,12 @@ public class Client extends JFrame {
 	private Boolean showListGrid;
 	
 
+	/*
+	 * used to temporarily disable the slider event when the slider value is
+	 * changed by code rather than by the user. the code changes the slider
+	 * value when a video is streaming in order to display the current position
+	 * of the stream.
+	 */
 	class ModifiedTimerTask extends TimerTask {
 		private float sliderPosition;
 
@@ -245,7 +243,7 @@ public class Client extends JFrame {
 		});
 		listViewWestPanel.setLayout(new GridLayout(15, 0, 0, 0));
 		
-				JButton streamSelectedVideoButton = new JButton("STREAM");
+				JButton streamSelectedVideoButton = new JButton("Stream");
 				listViewWestPanel.add(streamSelectedVideoButton);
 				streamSelectedVideoButton.addActionListener(new ActionListener() {
 					@Override
@@ -258,6 +256,12 @@ public class Client extends JFrame {
 							exceptionEntered = true;
 							writeStatus("Select a video before streaming", Color.YELLOW);
 						}
+						for (VideoFile aVideo : videoList) {
+							if (selectedVideoTitle.equals(aVideo.getTitle())) {
+								currentlyStreamingVideo = aVideo;
+							}
+						}
+						
 						if (!exceptionEntered) {
 							sendToServer("STREAM");
 							sendSelectedVideo(selectedVideoTitle);
@@ -272,7 +276,7 @@ public class Client extends JFrame {
 					}
 				});
 		
-		JButton streamSelectedVideoFromLastPositionButton = new JButton("STREAM from \r\n last position");
+		JButton streamSelectedVideoFromLastPositionButton = new JButton("Continue");
 		listViewWestPanel.add(streamSelectedVideoFromLastPositionButton);
 		streamSelectedVideoFromLastPositionButton.addActionListener(new ActionListener() {
 			@Override
@@ -291,6 +295,7 @@ public class Client extends JFrame {
 				if (!exceptionEntered) {
 					for (VideoFile aVideo : videoList) {
 						if (selectedVideoTitle.equals(aVideo.getTitle())) {
+							currentlyStreamingVideo = aVideo;
 							percentageWatched = aVideo.getPercentageWatched();
 						}
 					}
@@ -330,10 +335,10 @@ public class Client extends JFrame {
 		userNameLabel.setBounds(10, 15, 66, 14);
 		loginCredentialsPanel.add(userNameLabel);
 		
-			userNameField = new JTextField();
-			userNameField.setBounds(81, 12, 159, 20);
-			loginCredentialsPanel.add(userNameField);
-			userNameField.setColumns(10);
+		userNameField = new JTextField();
+		userNameField.setBounds(81, 12, 159, 20);
+		loginCredentialsPanel.add(userNameField);
+		userNameField.setColumns(10);
 			
 		JLabel lblPassword = new JLabel("Password: ");
 		lblPassword.setBounds(10, 43, 64, 14);
@@ -744,6 +749,7 @@ public class Client extends JFrame {
 
 					// Set to active again after moving slider
 					sliderEventActive = true;
+					currentlyStreamingVideo.setPercentageWatched(positionTimeSlider.getValue()/100);
 				}
 			}
 		};
@@ -767,12 +773,6 @@ public class Client extends JFrame {
 		};
 		updateTimer.schedule(autoHideControlPanelsTask, 4000);
 	}
-
-	/////////////////////////////////////////////////////////////////////////////////////////////
-	// MISC: getters and setters etc
-	/////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 	public void writeStatus(String status,Color statusColor){
 		clientStatusBar.setText(status);
@@ -800,7 +800,7 @@ public class Client extends JFrame {
 		}
 		
 		if (loginRequestAnswerString.equals("LOGINSUCCEDED")) {
-			writeStatus("LOGIN SUCCEDED", Color.GREEN);
+			writeStatus("Loggin successfull, connecting...", Color.YELLOW);
 			this.currentUser = (UserAccount) readFromServer();
 			
 			userNameField.setBackground(Color.WHITE);
@@ -814,7 +814,7 @@ public class Client extends JFrame {
 
 			sendToServer("REQUESTSTREAMPORT");
 			this.clientSpecificStreamPort = (int) readFromServer();
-
+			
 			// get the video list from the server and set up mediaStreaming at given received port
 			getVideoListFromServer();
 			requestMovieStream();
@@ -823,9 +823,8 @@ public class Client extends JFrame {
 			// enable other tabs and switch to the list view
 			tabbedPane.setEnabledAt(0, true);
 			tabbedPane.setEnabledAt(1, true);
-
 			tabbedPane.setSelectedIndex(0);
-			writeStatus(new String(this.currentUser.getUserNameID() + " connected to server " + this.hostAddress + ":" + this.communicationPort), Color.GREEN);
+			writeStatus(new String(currentUser.getUserNameID() + " connected to: " + hostAddress + ":" + this.clientSpecificStreamPort), Color.GREEN);
 			return true;
 		}else{
 			userNameField.setBackground(Color.RED);

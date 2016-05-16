@@ -9,11 +9,19 @@ public class VideoFile implements Serializable {
 	private String ID;
 	private String title;
 	private String filename;
+/*<<<<<<< HEAD
 	private Boolean isFavourite;
 	private int durationInSeconds;
 	private float publicRating;//the average of all ratings
 	private int userRating;//the individual rating of the user
 	private float percentageWatched;
+=======*/ //TODO remove
+	private Boolean isFavourite = false;
+	private int durationInSeconds = 0;
+	private float publicRating = 0;//the average of all ratings
+	private int userRating = 0;//the individual rating of the user
+	private float percentageWatched = 0;
+/*>>>>>>> 775f86ec9900fe8af2a5a6efcfd2c1dd8cb5d8de*/ //TODO remove
 	private List<String> publicCommentsList; 
 
 	
