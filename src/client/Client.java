@@ -437,19 +437,7 @@ public class Client extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				// check if there is anything to play
 
-				if (mediaPlayer.isPlayable()) {
-					sendToServer("STOP");
-					mediaPlayer.stop();
-					playPauseButton.setText("Play From Start");
-					
-					for (VideoFile aVideo : currentUser.getVideos()) {
-						if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
-							aVideo.setPercentageWatched(0);
-							updateVideoListView();
-						}
-					}
-					updateSliderPositionTask.cancel();
-				}
+				stopPlayer();
 
 			}
 		});
@@ -585,12 +573,7 @@ public class Client extends JFrame {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	// Methods used to set up the connection to the server
 	/////////////////////////////////////////////////////////////////////////////////////////////
-	/**
-	 * Connects to the default host:port
-	 */
-	public void connectToTheServer() {
-		connectToTheServer(this.hostAddress, this.communicationPort);
-	}
+	
 	
 	private void pausePlayer(){
 		//check if the player is null
@@ -600,11 +583,12 @@ public class Client extends JFrame {
 				mediaPlayer.pause();
 				playPauseButton.setText("Play");
 			}
+			updateVideoListView();
 		}
 		if(updateSliderPositionTask!=null) {
 			updateSliderPositionTask.cancel();
 		}
-		updateVideoListView();
+		
 	}
 	
 	private void playPlayer(){
@@ -616,10 +600,34 @@ public class Client extends JFrame {
 				updateSliderPositionTask();
 				playPauseButton.setText("Pause");
 			}
+			updateVideoListView();
 		}
-		updateVideoListView();
 	}
 	
+	private void stopPlayer () {
+		if (mediaPlayer != null) {
+			if (mediaPlayer.isPlayable()) {
+				sendToServer("STOP");
+				mediaPlayer.stop();
+				playPauseButton.setText("Play From Start");
+				
+				for (VideoFile aVideo : currentUser.getVideos()) {
+					if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
+						aVideo.setPercentageWatched(0);
+					}
+				}
+				updateSliderPositionTask.cancel();
+			}
+			updateVideoListView();
+		}
+	}
+	
+	/**
+	 * Connects to the default host:port
+	 */
+	public void connectToTheServer() {
+		connectToTheServer(this.hostAddress, this.communicationPort);
+	}
 	public void connectToTheServer(String specifiedHostName, int specifiedPortNumber) {
 		writeStatus(new String("Connecting to " + specifiedHostName + ":" + specifiedPortNumber + "..."), Color.YELLOW);
 		try {
@@ -628,35 +636,22 @@ public class Client extends JFrame {
 			this.outputToServer = new ObjectOutputStream(this.serverSocket.getOutputStream());
 			this.inputFromServer = new ObjectInputStream(serverSocket.getInputStream());
 			writeStatus(new String("Successfully connected to " + specifiedHostName + ":" + specifiedPortNumber), Color.GREEN);
-			;
 		} catch (UnknownHostException e) {
 			writeStatus(new String("Unknown host, unable to connect to: " + specifiedHostName + "."), Color.RED);
-			;
 			System.exit(-1);
 		} catch (IOException e) {
 			writeStatus(new String("Couldn't open I/O connection " + specifiedHostName + ":" + specifiedPortNumber + "."), Color.RED);
-			;
 			System.exit(-1);
 		}
-
 	}
 
 	public void getVideoListFromServer() {
+		// tell the server to send the videolist
+		sendToServer("GETLIST");
 		try {
-			// tell the server to send the videolist
-			sendToServer("GETLIST");
-			try {
-				this.videoList = (List<VideoFile>) inputFromServer.readObject();
-			} catch (ClassCastException e) {
-				writeStatus(new String("Could not cast input object stream to videoList"), Color.RED);
-				e.printStackTrace();
-			}
-		} catch (ClassNotFoundException e) {
-			writeStatus(new String("Class not found for incoming object(s)"), Color.RED);
-			e.printStackTrace();
-			System.exit(-1);
-		} catch (IOException e) {
-			e.printStackTrace();
+			this.videoList = (List<VideoFile>) readFromServer();
+		} catch (ClassCastException e) {
+			writeStatus(new String("ERROR: Could not cast input object stream to videoList"), Color.RED);
 		}
 		writeStatus(new String("Reading video list complete."), Color.GREEN);
 		updateVideoListView();
@@ -672,7 +667,7 @@ public class Client extends JFrame {
 		try {
 			outputToServer.writeObject(object);
 		} catch (IOException e) {
-			e.printStackTrace();
+			writeStatus(new String("ERROR: Could not transmit data."), Color.RED);
 		}
 	}
 
@@ -683,20 +678,12 @@ public class Client extends JFrame {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
+			writeStatus(new String("ERROR: Could not transmit data."), Color.RED);
 		}
 		return inputObjectFromStream;
 	}
 
-	// closes all sockets to make sure that they can be used again if the client
-	// is run again.
-	public void closeSockets() {
-		try {
-			serverSocket.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+	
 
 	// check that the videos received are valid
 	public boolean validateVideoListContentsAndFormat() {
@@ -739,18 +726,32 @@ public class Client extends JFrame {
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				if (updateSliderPositionTask != null) {
-					updateSliderPositionTask.cancel();
-				}
-				mediaPlayerComponent.release();
-				mediaPlayer.release();
-				
-				if (!serverSocket.isClosed()) {
-					sendToServer("CLOSECONNECTION");
-					closeSockets();
-				}
+				shutDownClient();
 			}
 		});
+	}
+	
+	private void shutDownClient(){
+		//cancel all possible timer tasks
+		if (updateTimer != null) {
+			updateTimer.cancel();
+		}
+		mediaPlayerComponent.release();
+		mediaPlayer.release();
+		closeConnection();
+	}
+	
+	// closes all sockets to make sure that they can be used again if the client
+	// is run again.
+	public void closeConnection() {
+		if(serverSocket != null && !serverSocket.isClosed()) {
+			sendToServer("CLOSECONNECTION");
+			try {
+				serverSocket.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void updateSliderPositionTask() {
@@ -786,7 +787,7 @@ public class Client extends JFrame {
 					}
 					
 				} else {
-					sendToServer("STOP");
+					
 					for (VideoFile aVideo : currentUser.getVideos()) {
 						if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
 							aVideo.setPercentageWatched(100);
@@ -794,7 +795,7 @@ public class Client extends JFrame {
 					}
 					tabbedPane.setSelectedIndex(0);
 					tabbedPane.setEnabledAt(2, false);
-					updateSliderPositionTask.cancel();
+					stopPlayer();
 				}
 				updateVideoListView();
 			}
