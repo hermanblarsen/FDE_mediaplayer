@@ -1,4 +1,4 @@
-package src.client;
+package client;
 
 import javax.swing.table.AbstractTableModel;
 

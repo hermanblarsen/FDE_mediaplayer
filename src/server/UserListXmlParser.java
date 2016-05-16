@@ -1,4 +1,4 @@
-package src.server;
+package server;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -13,18 +13,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class userListXMLreader {
+public class UserListXmlParser {
 	
-	public userListXMLreader(){
+	private String listOfUserDetailsDatapath = "serverRepository/userList.XML";
+	public UserListXmlParser(){
 		
 	}
 	
-	public ArrayList<UserAccount> parseUserAccountList(){
+	public ArrayList<UserAccount> parseUserAccountList() {
 		
 		ArrayList<UserAccount> userList = new ArrayList<UserAccount>();
 		
 		try {
-			File accountFile = new File("src/server/video_repository/userList.XML");
+			File accountFile = new File(listOfUserDetailsDatapath);
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document document = dBuilder.parse(accountFile);

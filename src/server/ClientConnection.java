@@ -1,4 +1,4 @@
-package src.server;
+package server;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -32,8 +32,8 @@ public class ClientConnection implements Runnable {
 	private MediaPlayerFactory mediaPlayerFactory;
 	private HeadlessMediaPlayer mediaPlayer;
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
-	private String xmlListDatapath = "src/server/video_repository/videoList.xml";
-	private String videoRepositoryDatapath = "src/server/video_repository/";
+	private String videoListDatapath = "serverRepository/videoList.xml";
+	private String videoRepositoryDatapath = "serverRepository/";
 
 	public ClientConnection(Socket clientSocket, int streamPort, String streamingOptions) {
 		this.connectedClientSocket = clientSocket;
@@ -46,7 +46,7 @@ public class ClientConnection implements Runnable {
 	@Override
 	public void run() {
 		// Read list of user details.
-		userListXMLreader xmlReader = new userListXMLreader();
+		UserListXmlParser xmlReader = new UserListXmlParser();
 		userList = xmlReader.parseUserAccountList();
 		
 		this.userLogin();
@@ -183,7 +183,7 @@ public class ClientConnection implements Runnable {
 						break;
 					}
 				}
-				videoListParser parser = new videoListParser(xmlListDatapath);
+				VideoListXmlParser parser = new VideoListXmlParser(videoListDatapath);
 				parser.writeVideoList(videoList);
 				break;
 			case "CLOSECONNECTION":
@@ -232,12 +232,12 @@ public class ClientConnection implements Runnable {
 	 * @return
 	 */
 	protected void readVideoList() {
-		readVideoList(this.xmlListDatapath);
+		readVideoList(this.videoListDatapath);
 	}
 
 	// Used for testing when other lists are used and checked.
 	protected void readVideoList(String fileLocation) {  
-		videoListParser xmlReader = new videoListParser(fileLocation); 
+		VideoListXmlParser xmlReader = new VideoListXmlParser(fileLocation); 
 		List<VideoFile> tempvideoList = xmlReader.parseVideoList();
 		this.videoList = tempvideoList;
 	}

@@ -1,4 +1,4 @@
-package src.client;
+package client;
 
 import static org.junit.Assert.*;
 
@@ -11,7 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXParseException;
 
-import src.server.*;
+import server.*;
 
 public class ClientTest {
 	private  Client	testClient;

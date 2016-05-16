@@ -1,4 +1,4 @@
-package src.server;
+package server;
 
 import static org.junit.Assert.*;
 
@@ -6,11 +6,11 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
-public class userListXMLreaderTest {
+public class UserListXmlParserTest {
 
 	@Test
 	public void testParseUserAccountList() {
-		userListXMLreader reader = new userListXMLreader();
+		UserListXmlParser reader = new UserListXmlParser();
 		ArrayList<UserAccount> userList = (ArrayList<UserAccount>) reader.parseUserAccountList();
 		UserAccount user = userList.get(0);
 		assertTrue(user.getUserNameID().equals("UserName1"));

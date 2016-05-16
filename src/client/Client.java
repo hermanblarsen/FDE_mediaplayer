@@ -1,4 +1,4 @@
-package src.client;
+package client;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -16,9 +16,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
-import src.server.UserAccount;
-import src.server.VideoFile;
 import javax.swing.JComboBox;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -38,6 +35,10 @@ import uk.co.caprica.vlcj.player.embedded.DefaultFullScreenStrategy;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 import com.sun.jna.*;
+
+import server.UserAccount;
+import server.VideoFile;
+
 import javax.swing.table.TableRowSorter;
 
 import java.util.Timer;
@@ -64,7 +65,6 @@ public class Client extends JFrame {
 	protected JComboBox<String> selectionBox;
 	protected JPanel subPanelControlMenu;
 	protected JPanel subPanelAudioMenu;
-	//protected JOptionPane errorOptionPane;
 	private JPanel listViewTab;
 	private JPanel settingsTab;
 	private JPanel videoPlayerTab;
@@ -81,12 +81,7 @@ public class Client extends JFrame {
 
 	private JSlider positionTimeSlider;
 	private Timer updateTimer = new Timer();
-	/*
-	 * used to temporarily disable the slider event when the slider value is
-	 * changed by code rather than by the user. the code changes the slider
-	 * value when a video is streaming in order to display the current position
-	 * of the stream.
-	 */
+	
 	private boolean sliderEventActive = true;
 	private TimerTask updateSliderPositionTask;
 	private ModifiedTimerTask skipTask;
@@ -97,13 +92,19 @@ public class Client extends JFrame {
 	private Boolean showListGrid;
 	
 
+	
+	/*
+	 * used to temporarily disable the slider event when the slider value is
+	 * changed by code rather than by the user. the code changes the slider
+	 * value when a video is streaming in order to display the current position
+	 * of the stream.
+	 */
 	class ModifiedTimerTask extends TimerTask {
 		private float sliderPosition;
 
 		public ModifiedTimerTask(float changedSliderPosition) {
 			sliderPosition = changedSliderPosition;
 		}
-
 		@Override
 		public void run() {
 			// first check if there is playable media
@@ -119,6 +120,9 @@ public class Client extends JFrame {
 			}
 		}
 	};
+	
+	
+	
 
 	/**
 	 * Launch the application.
@@ -261,6 +265,7 @@ public class Client extends JFrame {
 					updateSliderPositionTask();
 					playPauseButton.setText("Pause");
 					mediaPlayer.play();
+					tabbedPane.setEnabledAt(2, true);
 					tabbedPane.setSelectedIndex(2);
 					//writeStatus("STREAMING...", Color.GREEN); //TODO remove?
 					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
@@ -724,8 +729,8 @@ public class Client extends JFrame {
 		}
 		
 		if (loginRequestAnswerString.equals("LOGINSUCCEDED")) {
-			this.currentUser = (UserAccount) readFromServer();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
+			this.currentUser = (UserAccount) readFromServer();
 			userNameField.setBackground(Color.WHITE);
 			passwordField.setBackground(Color.WHITE);
 
@@ -746,7 +751,7 @@ public class Client extends JFrame {
 			// enable other tabs and switch to the list view
 			tabbedPane.setEnabledAt(0, true);
 			tabbedPane.setEnabledAt(1, true);
-			tabbedPane.setEnabledAt(2, true);
+			//tabbedPane.setEnabledAt(2, true);
 
 			tabbedPane.setSelectedIndex(0);
 			writeStatus(new String(this.currentUser.getUserNameID() + " connected to server " + this.hostAddress + ":" + this.communicationPort), Color.GREEN);

@@ -1,8 +1,6 @@
-package src.client;
+package client;
 
 import javax.swing.JFrame;
-
-import src.server.UserAccount;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ButtonGroup;
@@ -17,6 +15,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JRadioButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
+
+import server.UserAccount;
 
 public class CommentWindow extends JFrame{
 	private JTextField commentInputPane;

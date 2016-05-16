@@ -1,19 +1,15 @@
-package src.server;
+package server;
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import com.sun.org.apache.xerces.internal.parsers.DOMParser;
-
 import java.io.File;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -24,15 +20,16 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-public class videoListParser {
+public class VideoListXmlParser {
 
-	private DOMParser parser;
-	private Document doc;
+	private DOMParser readerWriterDOM;
+	private Document document;
+	private String videoListXmlDatapath = "serverRepository/videoList.xml";
 
-	public videoListParser(String videoListPath){
-		parser = new DOMParser();
+	public VideoListXmlParser(String videoListPath){
+		readerWriterDOM = new DOMParser();
 	    try {
-			parser.parse(videoListPath);
+			readerWriterDOM.parse(videoListPath);
 		} catch (SAXException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -40,13 +37,13 @@ public class videoListParser {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	    doc = parser.getDocument();
+	    document = readerWriterDOM.getDocument();
 	}
 	
 	public List<VideoFile> parseVideoList(){
 		List<VideoFile> videoList = new ArrayList<VideoFile>();
 		//take structure appart
-		NodeList root = doc.getElementsByTagName("video");
+		NodeList root = document.getElementsByTagName("video");
 		for (int i = 0; i < root.getLength(); i++) {
 			VideoFile video = new VideoFile();
 			Element videoElement = (Element) root.item(i);
@@ -127,7 +124,7 @@ public class videoListParser {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(new File("src/server/video_repository/videoList.xml"));
+			StreamResult result = new StreamResult(new File(videoListXmlDatapath));
 
 				transformer.transform(source, result);
 			} catch (TransformerException e) {
