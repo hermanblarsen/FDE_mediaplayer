@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +48,7 @@ public class ClientConnection implements Runnable {
 	public void run() {
 		// Read list of user details.
 		UserListXmlParser xmlReader = new UserListXmlParser();
-		userList = xmlReader.parseUserAccountList();
+		this.userList = xmlReader.parseUserAccountList();
 		
 		this.userLogin();
 		this.respondToClientCommands();
@@ -333,9 +332,7 @@ public class ClientConnection implements Runnable {
 			this.mediaPlayerFactory.release();
 			this.mediaPlayer.release();
 		}
-		
 		String videoFilename = getVideoNameFromID(desiredVideoID);
-
 		this.mediaPlayerFactory = new MediaPlayerFactory(this.videoRepositoryDatapath + videoFilename);
 		this.mediaPlayer = this.mediaPlayerFactory.newHeadlessMediaPlayer();
 		this.mediaPlayer.playMedia(this.videoRepositoryDatapath + videoFilename, this.streamingOptions, 
