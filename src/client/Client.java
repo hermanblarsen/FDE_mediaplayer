@@ -84,10 +84,10 @@ public class Client extends JFrame {
 	
 	private boolean sliderEventActive = true;
 	private TimerTask updateSliderPositionTask;
+	private TimerTask autoHideControlPanelsTask;
 	private ModifiedTimerTask skipTask;
 	private JButton playPauseButton;
 	private JButton stopButton;
-	private DefaultFullScreenStrategy fullScreenStrategy;
 	private JScrollPane listScrollPanel;
 	private Boolean showListGrid;
 	
@@ -114,16 +114,13 @@ public class Client extends JFrame {
 					sliderPosition = 0.99f;
 				}
 				sendToServer("PAUSE");
-				sendToServer("SKIP");
+				sendToServer("SKIPTOPOSITION");
 				sendToServer(sliderPosition);
 				sendToServer("PLAY");
 			}
 		}
 	};
 	
-	
-	
-
 	/**
 	 * Launch the application.
 	 */
@@ -431,7 +428,7 @@ public class Client extends JFrame {
 						skipTask.cancel();
 					}
 					skipTask = new ModifiedTimerTask(value);
-					updateTimer.schedule(skipTask, 500);
+					updateTimer.schedule(skipTask, 250);
 				}
 			}
 		});
@@ -440,19 +437,16 @@ public class Client extends JFrame {
 		JLabel durationOfMovie = new JLabel("Time playing");
 		subPanelControlMenu.add(durationOfMovie);
 
-		fullScreenStrategy = new DefaultFullScreenStrategy(this);
 		JToggleButton fullscreenButton = new JToggleButton("Fullscreen");
 		fullscreenButton.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (fullScreenStrategy.isFullScreenMode()) {
-					fullScreenStrategy.exitFullScreenMode();
-					mediaPlayerComponent.requestFocus();
+				if (thisClient.getExtendedState()==NORMAL) {
+					thisClient.setExtendedState(MAXIMIZED_BOTH);
 				} else {
-					fullScreenStrategy.enterFullScreenMode();
+					thisClient.setExtendedState(NORMAL);
 				}
-
 			}
 		});
 
@@ -647,7 +641,7 @@ public class Client extends JFrame {
 
 		mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
 		mediaPlayer = mediaPlayerComponent.getMediaPlayer();
-
+		
 		videoPlayerTab.add(mediaPlayerComponent, BorderLayout.CENTER);
 
 		this.addWindowListener(new WindowAdapter() {
@@ -671,6 +665,7 @@ public class Client extends JFrame {
 		// Cancels a previous task if it exists
 		if (updateSliderPositionTask != null) {
 			updateSliderPositionTask.cancel();
+			updateTimer.purge();
 		}
 
 		// Creates a new timerTask to update the timer position
@@ -694,7 +689,24 @@ public class Client extends JFrame {
 				}
 			}
 		};
-		updateTimer.schedule(updateSliderPositionTask, 0, 2000);
+		updateTimer.schedule(updateSliderPositionTask, 2000, 2000);
+	}
+	
+	private void setupAutoHideConsoleTask() {
+		// Cancels a previous task if it exists
+		if (autoHideControlPanelsTask != null) {
+			autoHideControlPanelsTask.cancel();
+			updateTimer.purge();
+		}
+
+		// Creates a new timerTask to update the timer position
+		autoHideControlPanelsTask = new TimerTask() {
+			@Override
+			public void run() {
+				//TODO shitloads here
+			}
+		};
+		updateTimer.schedule(autoHideControlPanelsTask, 0, 2000);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////

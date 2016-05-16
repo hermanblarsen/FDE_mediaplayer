@@ -150,7 +150,7 @@ public class ClientConnection implements Runnable {
 			case "REQUESTSTREAMPORT":
 				sendThroughObjectStream(this.streamPort);
 				break;	
-			case "SKIP":
+			case "SKIPTOPOSITION":
 				float videoPositionSlider = 0;
 				videoPositionSlider = (float) readFromObjectStream();
 				if (mediaPlayer != null && videoPositionSlider > 0 && videoPositionSlider < 1) {
