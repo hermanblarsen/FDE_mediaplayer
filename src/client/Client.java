@@ -170,7 +170,14 @@ public class Client extends JFrame {
 		this.contentPane.setLayout(new BorderLayout(0, 0));
 		
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-
+		tabbedPane.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				if(tabbedPane.getSelectedIndex() != 2){
+					pausePlayer();
+				}
+			}
+		});
 		listViewTab = new JPanel();
 		tabbedPane.addTab("Video List", null, listViewTab, "Browse videos to watch");
 		listViewTab.setLayout(new BorderLayout(0, 0));
@@ -408,23 +415,9 @@ public class Client extends JFrame {
 					// depending on if the video is already playing the button
 					// function changes.
 					if (mediaPlayer.isPlaying()) {
-						mediaPlayer.pause();
-						sendToServer("PAUSE");
-						if(updateSliderPositionTask!=null) {
-							updateSliderPositionTask.cancel();
-						}
-						
-						playPauseButton.setText("Play");
-						
+						pausePlayer();
 					} else {
-						mediaPlayer.play();
-						sendToServer("PLAY");
-						//if(updateSliderPositionTask==null) {
-						updateTimer.purge();
-						updateSliderPositionTask();
-						//}
-						
-						playPauseButton.setText("Pause");
+						playPlayer();
 					}
 				}else {
 					sendToServer("PLAY");
@@ -448,6 +441,13 @@ public class Client extends JFrame {
 					sendToServer("STOP");
 					mediaPlayer.stop();
 					playPauseButton.setText("Play From Start");
+					
+					for (VideoFile aVideo : currentUser.getVideos()) {
+						if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
+							aVideo.setPercentageWatched(0);
+							updateVideoListView();
+						}
+					}
 					updateSliderPositionTask.cancel();
 				}
 
@@ -591,6 +591,35 @@ public class Client extends JFrame {
 	public void connectToTheServer() {
 		connectToTheServer(this.hostAddress, this.communicationPort);
 	}
+	
+	private void pausePlayer(){
+		//check if the player is null
+		if (mediaPlayer != null) {
+			if (mediaPlayer.isPlaying()) {
+				sendToServer("PAUSE");
+				mediaPlayer.pause();
+				playPauseButton.setText("Play");
+			}
+		}
+		if(updateSliderPositionTask!=null) {
+			updateSliderPositionTask.cancel();
+		}
+		updateVideoListView();
+	}
+	
+	private void playPlayer(){
+		//check if the player is null
+		if (mediaPlayer != null) {
+			if (mediaPlayer.isPlayable()) {
+				sendToServer("PLAY");
+				mediaPlayer.play();
+				updateSliderPositionTask();
+				playPauseButton.setText("Pause");
+			}
+		}
+		updateVideoListView();
+	}
+	
 	public void connectToTheServer(String specifiedHostName, int specifiedPortNumber) {
 		writeStatus(new String("Connecting to " + specifiedHostName + ":" + specifiedPortNumber + "..."), Color.YELLOW);
 		try {
@@ -630,7 +659,7 @@ public class Client extends JFrame {
 			e.printStackTrace();
 		}
 		writeStatus(new String("Reading video list complete."), Color.GREEN);
-		updateVideoList();
+		updateVideoListView();
 		validateVideoListContentsAndFormat();
 	}
 
@@ -741,7 +770,7 @@ public class Client extends JFrame {
 				if (inputFromServer instanceof Float) {
 					positionInTime = (float) inputFromServer;
 				}
-				if (positionInTime >= 0 && positionInTime <= 1) {
+				if (positionInTime >= 0 && positionInTime <= 0.99) {
 					// prevent the change listener from firing
 					sliderEventActive = false;
 					positionTimeSlider.setValue(Math.round(positionInTime * positionTimeSlider.getMaximum()));
@@ -749,8 +778,25 @@ public class Client extends JFrame {
 
 					// Set to active again after moving slider
 					sliderEventActive = true;
-					currentlyStreamingVideo.setPercentageWatched(positionTimeSlider.getValue()/100);
+					
+					for (VideoFile aVideo : currentUser.getVideos()) {
+						if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
+							aVideo.setPercentageWatched(positionInTime);
+						}
+					}
+					
+				} else {
+					sendToServer("STOP");
+					for (VideoFile aVideo : currentUser.getVideos()) {
+						if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
+							aVideo.setPercentageWatched(100);
+						}
+					}
+					tabbedPane.setSelectedIndex(0);
+					tabbedPane.setEnabledAt(2, false);
+					updateSliderPositionTask.cancel();
 				}
+				updateVideoListView();
 			}
 		};
 		updateTimer.schedule(updateSliderPositionTask, 3000, 2000);
@@ -818,7 +864,7 @@ public class Client extends JFrame {
 			// get the video list from the server and set up mediaStreaming at given received port
 			getVideoListFromServer();
 			requestMovieStream();
-			updateVideoList();
+			updateVideoListView();
 
 			// enable other tabs and switch to the list view
 			tabbedPane.setEnabledAt(0, true);
@@ -834,7 +880,7 @@ public class Client extends JFrame {
 		return false;
 	}
 
-	public void updateVideoList() {
+	public void updateVideoListView() {
 		showListGrid = true;
 		listTableModel = new VideoTableModel(this.videoList.size());
 		listTableRowSorter = new TableRowSorter<>(listTableModel);
@@ -852,10 +898,10 @@ public class Client extends JFrame {
 					//user has user specific fields for this video
 					clientVideo.setIsFavourite(userVideo.getIsFavourite());
 					clientVideo.setPercentageWatched(userVideo.getPercentageWatched());
-					clientVideo.setPublicRating(userVideo.getUserRating());
 				}
 			}
 		}
+		
 		int rowCounter = 0;
 		for (VideoFile aVideo : this.videoList) {
 			int columnCounter = 0;
