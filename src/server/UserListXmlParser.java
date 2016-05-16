@@ -3,6 +3,12 @@ package server;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -11,6 +17,7 @@ import org.w3c.dom.Element;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class UserListXmlParser {
@@ -107,6 +114,63 @@ public class UserListXmlParser {
 		}
 	    
 		return userList;
+	}
+	
+	public void writeUserListToXML(ArrayList<UserAccount> userList){
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		try {
+			DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+			Document doc = docBuilder.newDocument();
+			
+			Element rootElement = doc.createElement("userList");
+			doc.appendChild(rootElement);
+			
+			for (UserAccount user: userList) {
+				
+				Element User = doc.createElement("User");
+				User.setAttribute("id",user.getUserNameID());
+				
+				Element password = doc.createElement("password");
+				password.setTextContent(user.getPassword());
+				User.appendChild(password);
+				
+				Element videoList = doc.createElement("videoList");
+				for(VideoFile video : user.getVideos()){
+					Element videoElement = doc.createElement("video");
+					videoElement.setAttribute("id", video.getID());
+					
+					Element favourite = doc.createElement("favourite");
+					favourite.setTextContent(Boolean.toString(video.getIsFavourite()));
+					videoElement.appendChild(favourite);
+					
+					Element percentageWatched = doc.createElement("percentageWatched");
+					percentageWatched.setTextContent(Float.toString(video.getPercentageWatched()));
+					videoElement.appendChild(percentageWatched);
+					
+					Element rating = doc.createElement("rating");
+					rating.setTextContent(Integer.toString(video.getUserRating()));
+					videoElement.appendChild(rating);
+					
+					videoList.appendChild(videoElement);
+				}
+				User.appendChild(videoList);
+				rootElement.appendChild(User);
+			}
+			
+			try {
+				// write the content into xml file
+				TransformerFactory transformerFactory = TransformerFactory.newInstance();
+				Transformer transformer = transformerFactory.newTransformer();
+				DOMSource source = new DOMSource(doc);
+				StreamResult result = new StreamResult(new File(listOfUserDetailsDatapath));
+				transformer.transform(source, result);
+			} catch (TransformerException e) {
+					e.printStackTrace();
+			}
+			
+		} catch (ParserConfigurationException e) {
+			e.printStackTrace();
+		}
 	}
 	
   

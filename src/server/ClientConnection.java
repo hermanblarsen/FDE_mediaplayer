@@ -199,13 +199,44 @@ public class ClientConnection implements Runnable {
 				//server then expects the rating the user has given
 				int rating = (int) readFromObjectStream();
 				//server now updates the UserAccount with the rating
-				for (VideoFile userVideo : loggedInUser.getVideos()) {
+				ArrayList<VideoFile> modifiedUserVideoList = (ArrayList<VideoFile>) loggedInUser.getVideos();
+				for (Iterator iterator = videoList.iterator(); iterator.hasNext();) {
+					VideoFile serverVideo = (VideoFile) iterator.next();
+					//get the right video file from the video list
+					if (serverVideo.getID().equals(ratedVideoID)) {
+						//now check if the user allready has this video in his list
+						boolean userHasVideo = false;
+						for (Iterator iterator2 = modifiedUserVideoList.iterator(); iterator2.hasNext();) {
+							VideoFile userVideo = (VideoFile) iterator2.next();
+							if(userVideo.getID().equals(ratedVideoID)){
+								userHasVideo = true;
+								break;
+							}
+						}
+						if (!userHasVideo) {
+							modifiedUserVideoList.add(serverVideo);
+						}
+						break;
+					}
+				}
+				for (VideoFile userVideo : modifiedUserVideoList) {
 					if (userVideo.getID().equals(ratedVideoID)) {
 						userVideo.setUserRating(rating);
 					}
 				}
+				loggedInUser.setVideos(modifiedUserVideoList);
+				//refresh the user account in the user list
+				for (Iterator iterator = this.userList.iterator(); iterator.hasNext();) {
+					UserAccount account = (UserAccount) iterator.next();
+					if (account.getUserNameID().equals(loggedInUser.getUserNameID())) {
+						account = loggedInUser;
+					}
+				}
+				UserListXmlParser parser = new UserListXmlParser();
+				parser.writeUserListToXML((ArrayList<UserAccount>) userList);
 				//update the overall video rating 
 				updateVideoRating(ratedVideoID);
+				
 				break;
 			default:
 				break;
