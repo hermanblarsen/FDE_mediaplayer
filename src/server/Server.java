@@ -27,7 +27,7 @@ public class Server implements Runnable{
 		try {
 			serverSocket = new ServerSocket(communicationPort);
 		} catch (IOException e) {
-			System.out.println("ERROR! Unable to create server socket"); //TODO Remove/change to status bar?
+			System.out.println("ERROR! Unable to create server socket");
 			e.printStackTrace();
 		}
 		
@@ -36,9 +36,9 @@ public class Server implements Runnable{
 			try {
 				// Wait for client to connect to socket
 				System.out.println("Successfully opened socket on port: " 
-							+ communicationPort + ", awaiting connection..."); //TODO change to status bar?
+							+ communicationPort + ", awaiting connection...");
 				this.clientSocket = this.serverSocket.accept();
-				System.out.println("Successfully connected to client."); //TODO change to status bar?
+				System.out.println("Successfully connected to client.");
 				
 				//Assign a streaming port to the client
 				int newClientStreamPort = initialStreamPort + this.clientConnectionList.size();
@@ -51,13 +51,11 @@ public class Server implements Runnable{
 				Thread clientThread = new Thread(connectedClient);
 				clientThread.start();
 			} catch (IOException e) {
-				System.out.println("ERROR! Connection to client failed"); //TODO change to status bar?
+				System.out.println("ERROR! Connection to client failed");
 				e.printStackTrace();
 			}
 		}
 	}
-
-	
 
 	private String formatRtpStream(String serverAddress, int streamPort) {
 		StringBuilder sb = new StringBuilder(60);
@@ -73,7 +71,7 @@ public class Server implements Runnable{
 		try {
 			socket.close();
 		} catch (IOException e) {
-			System.out.println("Failed to close server-sockets"); //TODO change to status bar?
+			System.out.println("Failed to close server-sockets");
 			e.printStackTrace();
 		}
 	}

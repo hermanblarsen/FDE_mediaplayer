@@ -45,6 +45,10 @@ public class ClientConnection implements Runnable {
 
 	@Override
 	public void run() {
+		// Read list of user details.
+		userListXMLreader xmlReader = new userListXMLreader();
+		userList = xmlReader.parseUserAccountList();
+		
 		this.userLogin();
 		this.respondToClientCommands();
 	}
@@ -58,9 +62,7 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 		
-		// Read list of user details.
-		userListXMLreader xmlReader = new userListXMLreader();
-		userList = xmlReader.parseUserAccountList();
+		
 		
 		userIsLoggedIn = false;
 		while (!userIsLoggedIn && clientIsConnected) {
@@ -86,8 +88,8 @@ public class ClientConnection implements Runnable {
 			for (UserAccount user : userList) {
 				// check for user name
 				if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
-					System.out.println("LOGIN SUCCEDED"); //TODO put to task bar?
-					sendThroughObjectStream("LOGIN SUCCEDED");
+					System.out.println("LOGIN SUCCEDED");
+					sendThroughObjectStream("LOGINSUCCEDED");
 					this.userIsLoggedIn = true;
 					// sending user-specific account-data to client
 					sendThroughObjectStream(user);
@@ -96,8 +98,8 @@ public class ClientConnection implements Runnable {
 			}
 			
 			if (!userIsLoggedIn && clientIsConnected) {
-				System.out.println("LOGIN FAILED"); //TODO put to task bar?
-				sendThroughObjectStream("LOGIN FAILED");
+				System.out.println("LOGIN FAILED");
+				sendThroughObjectStream("LOGINFAILED");
 			}
 				
 		}
@@ -105,7 +107,10 @@ public class ClientConnection implements Runnable {
 
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
+<<<<<<< HEAD
 			
+=======
+>>>>>>> 80d3e07fb4cf575927cdedebd97b7605b2205cdf
 			String clientCommandString = "";
 			Object clientOutput = null;
 			clientOutput = readFromObjectStream();
@@ -114,7 +119,7 @@ public class ClientConnection implements Runnable {
 			}
 			if(clientOutput instanceof String) {
 				clientCommandString = (String) clientOutput;
-				System.out.println("Message recieved from client: " + clientCommandString); //TODO put to task bar?
+				//System.out.println("Message recieved from client: " + clientCommandString); //TODO Remove
 			}
 			
 			switch (clientCommandString) {
@@ -147,11 +152,8 @@ public class ClientConnection implements Runnable {
 				String videoID = "";
 				videoID = (String) readFromObjectStream();
 				setUpMediaStream(videoID);
-				break;	
-			case "CLOSE":
-				System.out.println("Command CLOSE was used");
 				break;
-			case "STREAMPORT":
+			case "REQUESTSTREAMPORT":
 				sendThroughObjectStream(this.streamPort);
 				break;	
 			case "SKIP":
@@ -204,7 +206,6 @@ public class ClientConnection implements Runnable {
 			try {
 				this.connectedClientSocket.close();
 			} catch (IOException e) {
-				// TODO 
 				e.printStackTrace();
 			}
 			this.mediaPlayer.release();
@@ -226,8 +227,7 @@ public class ClientConnection implements Runnable {
 		try {
 			inputObject = inputFromClient.readObject();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
+			//Catch and leave exception
 		}
 		return inputObject;
 	}
