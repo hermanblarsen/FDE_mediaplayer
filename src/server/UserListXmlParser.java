@@ -20,7 +20,7 @@ public class UserListXmlParser {
 		
 	}
 	
-	public ArrayList<UserAccount> parseUserAccountList() {
+	public ArrayList<UserAccount> parseUserAccountList(){
 		
 		ArrayList<UserAccount> userList = new ArrayList<UserAccount>();
 		

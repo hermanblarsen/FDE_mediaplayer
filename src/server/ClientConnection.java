@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import com.sun.jna.Native;
@@ -21,6 +22,7 @@ public class ClientConnection implements Runnable {
 	private int streamPort;
 	private Boolean clientIsConnected;
 	private Boolean userIsLoggedIn;
+	private UserAccount loggedInUser;
 	private Socket connectedClientSocket;
 	private ObjectOutputStream outputToClient;
 	private ObjectInputStream inputFromClient;
@@ -32,7 +34,7 @@ public class ClientConnection implements Runnable {
 	private MediaPlayerFactory mediaPlayerFactory;
 	private HeadlessMediaPlayer mediaPlayer;
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
-	private String videoListDatapath = "serverRepository/videoList.xml";
+	private String xmlListDatapath = "serverRepository/videoList.xml";
 	private String videoRepositoryDatapath = "serverRepository/";
 
 	public ClientConnection(Socket clientSocket, int streamPort, String streamingOptions) {
@@ -62,6 +64,8 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 		
+		
+		
 		userIsLoggedIn = false;
 		while (!userIsLoggedIn && clientIsConnected) {
 			Object clientOutput = null;
@@ -88,6 +92,7 @@ public class ClientConnection implements Runnable {
 				if ((user.getUserNameID() + user.getPassword()).equals(usernameAndPassword)) {
 					System.out.println("LOGIN SUCCEDED");
 					sendThroughObjectStream("LOGINSUCCEDED");
+					this.loggedInUser = user;
 					this.userIsLoggedIn = true;
 					// sending user-specific account-data to client
 					sendThroughObjectStream(user);
@@ -183,16 +188,60 @@ public class ClientConnection implements Runnable {
 						break;
 					}
 				}
-				VideoListXmlParser parser = new VideoListXmlParser(videoListDatapath);
-				parser.writeVideoList(videoList);
+				updateVideoListXML();
 				break;
 			case "CLOSECONNECTION":
 				this.closeConnection();
+				break;
+			case "RATE":
+				//server now expects the videoID of the video that is being rated
+				String ratedVideoID = (String) readFromObjectStream();
+				//server then expects the rating the user has given
+				int rating = (int) readFromObjectStream();
+				//server now updates the UserAccount with the rating
+				for (VideoFile userVideo : loggedInUser.getVideos()) {
+					if (userVideo.getID().equals(ratedVideoID)) {
+						userVideo.setUserRating(rating);
+					}
+				}
+				//update the overall video rating 
+				updateVideoRating(ratedVideoID);
 				break;
 			default:
 				break;
 			}
 		}
+	}
+
+	private void updateVideoListXML() {
+		VideoListXmlParser parser = new VideoListXmlParser(xmlListDatapath);
+		parser.writeVideoList(videoList);
+	}
+
+	private void updateVideoRating(String ratedVideoID) {
+		float globalRating = 0 ;
+		int numberOfUsersThatRatedVideo = 0;
+		for (UserAccount user : userList) {
+			for (VideoFile userVideo : user.getVideos()) {
+				//check if the user has rated this video
+				if (userVideo.getID().equals(ratedVideoID)) {
+					globalRating += userVideo.getUserRating();
+					numberOfUsersThatRatedVideo += 1;
+				}
+			}
+		}
+		//now find the average rating
+		if (numberOfUsersThatRatedVideo > 0) {//prevent dividing by 0 error
+			globalRating = globalRating/((float)numberOfUsersThatRatedVideo);
+			//now change the rating of the video
+			for (Iterator video = videoList.iterator(); video.hasNext();) {
+				VideoFile currentVideo = (VideoFile) video.next();
+				if (currentVideo.getID().equals(ratedVideoID)) {
+					currentVideo.setPublicRating(globalRating);
+				}
+			}
+		}
+		updateVideoListXML();
 	}
 
 	private void closeConnection() {
@@ -232,7 +281,7 @@ public class ClientConnection implements Runnable {
 	 * @return
 	 */
 	protected void readVideoList() {
-		readVideoList(this.videoListDatapath);
+		readVideoList(this.xmlListDatapath);
 	}
 
 	// Used for testing when other lists are used and checked.

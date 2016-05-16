@@ -22,14 +22,14 @@ import javax.xml.transform.stream.StreamResult;
 
 public class VideoListXmlParser {
 
-	private DOMParser readerWriterDOM;
-	private Document document;
+	private DOMParser parser;
+	private Document doc;
 	private String videoListXmlDatapath = "serverRepository/videoList.xml";
-
+	
 	public VideoListXmlParser(String videoListPath){
-		readerWriterDOM = new DOMParser();
+		parser = new DOMParser();
 	    try {
-			readerWriterDOM.parse(videoListPath);
+			parser.parse(videoListPath);
 		} catch (SAXException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -37,13 +37,13 @@ public class VideoListXmlParser {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	    document = readerWriterDOM.getDocument();
+	    doc = parser.getDocument();
 	}
 	
 	public List<VideoFile> parseVideoList(){
 		List<VideoFile> videoList = new ArrayList<VideoFile>();
 		//take structure appart
-		NodeList root = document.getElementsByTagName("video");
+		NodeList root = doc.getElementsByTagName("video");
 		for (int i = 0; i < root.getLength(); i++) {
 			VideoFile video = new VideoFile();
 			Element videoElement = (Element) root.item(i);
@@ -71,6 +71,12 @@ public class VideoListXmlParser {
 							}
 						}
 						video.setPublicCommentsList(tempcommentList);
+						break;
+					case "publicRating":
+						video.setPublicRating(Float.parseFloat(subElement.getTextContent()));
+						break;
+					case "userRating":
+						video.setUserRating(Integer.parseInt(subElement.getTextContent()));
 						break;
 					default:
 						break;
@@ -116,6 +122,14 @@ public class VideoListXmlParser {
 					videoNode.appendChild(comments);
 				}
 				
+				Element publicRating = doc.createElement("publicRating");
+				publicRating.setTextContent(Float.toString(video.getPublicRating()));
+				videoNode.appendChild(publicRating);
+				
+				Element userRating = doc.createElement("userRating");
+				userRating.setTextContent(Integer.toString(video.getUserRating()));
+				videoNode.appendChild(userRating);
+				
 				rootElement.appendChild(videoNode);
 			}
 			
@@ -124,7 +138,7 @@ public class VideoListXmlParser {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(new File(videoListXmlDatapath));
+			StreamResult result = new StreamResult(new File("src/server/video_repository/videoList.xml"));
 
 				transformer.transform(source, result);
 			} catch (TransformerException e) {

@@ -11,7 +11,7 @@ public class VideoFile implements Serializable {
 	private String filename;
 	private Boolean isFavourite;
 	private int durationInSeconds;
-	private int publicRating;//the average of all ratings
+	private float publicRating;//the average of all ratings
 	private int userRating;//the individual rating of the user
 	private float percentageWatched = 0;
 	private List<String> publicCommentsList; 
@@ -73,23 +73,22 @@ public class VideoFile implements Serializable {
 	}
 	
 	public Boolean getIsFavourite() {
-		//return isFavourite;
-		return false;
+		return isFavourite;
 	}
 	public void setIsFavourite(Boolean isFavourite) {
 		this.isFavourite = isFavourite;
 	}
 	public int getDurationInSeconds() {
-		//return durationInSeconds;
-		return 180;
+		//TODO return actual duration
+		return 0;
 	}
 	public void setDurationInSeconds(int durationInSeconds) {
 		this.durationInSeconds = durationInSeconds;
 	}
-	public int getPublicRating() {
+	public float getPublicRating() {
 		return publicRating;
 	}
-	public void setPublicRating(int publicRating) {
+	public void setPublicRating(float publicRating) {
 		this.publicRating = publicRating;
 	}
 	public List<String> getPublicCommentsList() {
