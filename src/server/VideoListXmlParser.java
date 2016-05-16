@@ -138,7 +138,7 @@ public class VideoListXmlParser {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(new File("src/server/video_repository/videoList.xml"));
+			StreamResult result = new StreamResult(new File(videoListXmlDatapath));
 
 				transformer.transform(source, result);
 			} catch (TransformerException e) {

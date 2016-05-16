@@ -43,6 +43,9 @@ import javax.swing.table.TableRowSorter;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.awt.GridLayout;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
 
 public class Client extends JFrame {
 
@@ -117,6 +120,7 @@ public class Client extends JFrame {
 				sendToServer("SKIPTOPOSITION");
 				sendToServer(sliderPosition);
 				sendToServer("PLAY");
+				updateSliderPositionTask();
 			}
 		}
 	};
@@ -210,7 +214,6 @@ public class Client extends JFrame {
 
 		JPanel listViewWestPanel = new JPanel();
 		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
-		listViewWestPanel.setLayout(new BorderLayout(0, 0));
 		contentPane.add(tabbedPane);
 
 		listScrollPanel = new JScrollPane();
@@ -240,68 +243,115 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		listViewWestPanel.add(btnComment, BorderLayout.NORTH);
-
-		JButton streamSelectedVideoButton = new JButton("STREAM");
-		listViewWestPanel.add(streamSelectedVideoButton, BorderLayout.CENTER);
-		streamSelectedVideoButton.addActionListener(new ActionListener() {
+		listViewWestPanel.setLayout(new GridLayout(15, 0, 0, 0));
+		
+				JButton streamSelectedVideoButton = new JButton("STREAM");
+				listViewWestPanel.add(streamSelectedVideoButton);
+				streamSelectedVideoButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						String selectedVideoTitle = "";
+						boolean exceptionEntered = false;
+						try {
+							selectedVideoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+						} catch (Exception ee) {
+							exceptionEntered = true;
+							writeStatus("Select a video before streaming", Color.YELLOW);
+						}
+						if (!exceptionEntered) {
+							sendToServer("STREAM");
+							sendSelectedVideo(selectedVideoTitle);
+							positionTimeSlider.setValue(0);
+							updateSliderPositionTask();
+							playPauseButton.setText("Pause");
+							mediaPlayer.play();
+							tabbedPane.setEnabledAt(2, true);
+							tabbedPane.setSelectedIndex(2);
+							writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
+						} 
+					}
+				});
+		
+		JButton streamSelectedVideoFromLastPositionButton = new JButton("STREAM from \r\n last position");
+		listViewWestPanel.add(streamSelectedVideoFromLastPositionButton);
+		streamSelectedVideoFromLastPositionButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				String selectedVideoTitle = "";
+				float percentageWatched = 0;
 				boolean exceptionEntered = false;
+				
 				try {
 					selectedVideoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
 				} catch (Exception ee) {
 					exceptionEntered = true;
 					writeStatus("Select a video before streaming", Color.YELLOW);
 				}
+				
 				if (!exceptionEntered) {
+					for (VideoFile aVideo : videoList) {
+						if (selectedVideoTitle.equals(aVideo.getTitle())) {
+							percentageWatched = aVideo.getPercentageWatched();
+						}
+					}
+					
 					sendToServer("STREAM");
 					sendSelectedVideo(selectedVideoTitle);
-					updateTimer.purge();
+					
+					if (percentageWatched > 0 && percentageWatched < 1) {
+						sendToServer("SKIPTOPOSITION");
+						sendToServer(percentageWatched);
+						positionTimeSlider.setValue((int)(percentageWatched*100));
+					}
+					tabbedPane.setEnabledAt(2, true);
+					tabbedPane.setSelectedIndex(2);
+					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
+					
 					updateSliderPositionTask();
 					playPauseButton.setText("Pause");
 					mediaPlayer.play();
-					tabbedPane.setEnabledAt(2, true);
-					tabbedPane.setSelectedIndex(2);
-					//writeStatus("STREAMING...", Color.GREEN); //TODO remove?
-					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
 				} 
 			}
 		});
-
+		listViewWestPanel.add(btnComment);
+		
 		settingsTab = new JPanel();
 		settingsTab.setToolTipText("");
 		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
+		this.tabbedPane.setEnabledAt(1, false);
 		settingsTab.setLayout(null);
-
+		
+		JPanel loginCredentialsPanel = new JPanel();
+		loginCredentialsPanel.setBounds(225, 10, 250, 103);
+		settingsTab.add(loginCredentialsPanel);
+		loginCredentialsPanel.setLayout(null);
+		
 		JLabel userNameLabel = new JLabel("Username: ");
-		userNameLabel.setBounds(0, 16, 87, 32);
-		settingsTab.add(userNameLabel);
-
-		userNameField = new JTextField();
-		userNameField.setBounds(102, 19, 146, 26);
-		settingsTab.add(userNameField);
-		userNameField.setColumns(10);
-
+		userNameLabel.setBounds(10, 15, 66, 14);
+		loginCredentialsPanel.add(userNameLabel);
+		
+			userNameField = new JTextField();
+			userNameField.setBounds(81, 12, 159, 20);
+			loginCredentialsPanel.add(userNameField);
+			userNameField.setColumns(10);
+			
 		JLabel lblPassword = new JLabel("Password: ");
-		lblPassword.setBounds(0, 64, 87, 20);
-		settingsTab.add(lblPassword);
-
+		lblPassword.setBounds(10, 43, 64, 14);
+		loginCredentialsPanel.add(lblPassword);
+		
 		passwordField = new JPasswordField();
-		passwordField.setBounds(102, 61, 146, 26);
-		settingsTab.add(passwordField);
-
+		passwordField.setBounds(81, 40, 159, 20);
+		loginCredentialsPanel.add(passwordField);
+		
 		loginButton = new JButton("Login");
+		loginButton.setBounds(81, 71, 159, 23);
+		loginCredentialsPanel.add(loginButton);
 		loginButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				login();
 			}
 		});
-		
-		loginButton.setBounds(0, 103, 248, 29);
-		settingsTab.add(loginButton);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////
 		// Tab where the selected video will be displayed
@@ -412,11 +462,26 @@ public class Client extends JFrame {
 		JButton fullSkipButton = new JButton("-->");
 		subPanelControlMenu.add(fullSkipButton);*/
 		
+		JToggleButton fullscreenButton = new JToggleButton("Fullscreen");
+		fullscreenButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (thisClient.getExtendedState()==NORMAL) {
+					thisClient.setExtendedState(MAXIMIZED_BOTH);
+				} else {
+					thisClient.setExtendedState(NORMAL);
+				}
+			}
+		});
+
+		subPanelControlMenu.add(fullscreenButton);
 		
 		JLabel timePlayingLabel = new JLabel("Time Remaining");
 		subPanelControlMenu.add(timePlayingLabel);
 
 		positionTimeSlider = new JSlider(0, 100);
+		positionTimeSlider.setValue(0);
 		positionTimeSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -443,21 +508,6 @@ public class Client extends JFrame {
 		subPanelControlMenu.add(positionTimeSlider);
 		JLabel durationOfMovie = new JLabel("Time playing");
 		subPanelControlMenu.add(durationOfMovie);
-
-		JToggleButton fullscreenButton = new JToggleButton("Fullscreen");
-		fullscreenButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (thisClient.getExtendedState()==NORMAL) {
-					thisClient.setExtendedState(MAXIMIZED_BOTH);
-				} else {
-					thisClient.setExtendedState(NORMAL);
-				}
-			}
-		});
-
-		subPanelControlMenu.add(fullscreenButton);
 
 		Component verticalPlaceholder = Box.createVerticalStrut(20);
 		mouseEventPanelControlMenu.add(verticalPlaceholder);
@@ -487,19 +537,17 @@ public class Client extends JFrame {
 		subPanelAudioMenu.setOpaque(false);
 		subPanelAudioMenu.setVisible(false);
 
-		JSlider audioSlider = new JSlider();
-		audioSlider.setMaximum(100);
-		audioSlider.setMinimum(0);
+		JSlider audioSlider = new JSlider(0, 100);
 		audioSlider.setValue(50);
 		audioSlider.setOrientation(SwingConstants.VERTICAL);
 		audioSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				JSlider sliderTemp = (JSlider) e.getSource();
-				int volume_value = sliderTemp.getValue();
+				JSlider newSliderValue = (JSlider) e.getSource();
+				int volumeValue = newSliderValue.getValue();
 				// check if video is actually playable
 				if (mediaPlayer.isPlayable()) {
-					mediaPlayer.setVolume(volume_value);
+					mediaPlayer.setVolume(volumeValue);
 				}
 			}
 		});
@@ -525,10 +573,8 @@ public class Client extends JFrame {
 		
 		// disable the video list and video player tab until the user logs in
 		this.tabbedPane.setEnabledAt(0, false);
-		this.tabbedPane.setEnabledAt(1, false);
 		this.tabbedPane.setEnabledAt(2, false);
 		this.pack();// makes sure everything is displayable.
-
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -701,7 +747,7 @@ public class Client extends JFrame {
 				}
 			}
 		};
-		updateTimer.schedule(updateSliderPositionTask, 2000, 2000);
+		updateTimer.schedule(updateSliderPositionTask, 3000, 2000);
 	}
 	
 	private void updateAutoHideConsoleTask() {
@@ -734,7 +780,7 @@ public class Client extends JFrame {
 	}
 	
 	/*
-	 * Trys to log into the user account on the server with the data from the textfields.
+	 * Tries to log into the user account on the server with the data from the textfields.
 	 */
 	public void login(){
 		String usernameInput = this.userNameField.getText().toString();
@@ -821,6 +867,8 @@ public class Client extends JFrame {
 			this.listTable.setValueAt(aVideo.getIsFavourite(), rowCounter, columnCounter);
 			columnCounter++;
 			this.listTable.setValueAt(aVideo.getPublicRating(), rowCounter, columnCounter);
+			columnCounter++;
+			this.listTable.setValueAt(aVideo.getPercentageWatched()*100 + "%", rowCounter, columnCounter);
 			rowCounter++;
 		}
 		validate();

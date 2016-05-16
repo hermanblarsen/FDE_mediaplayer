@@ -13,7 +13,7 @@ public class VideoFile implements Serializable {
 	private int durationInSeconds;
 	private float publicRating;//the average of all ratings
 	private int userRating;//the individual rating of the user
-	private float percentageWatched = 0;
+	private float percentageWatched;
 	private List<String> publicCommentsList; 
 
 	
@@ -21,7 +21,7 @@ public class VideoFile implements Serializable {
 		return percentageWatched;
 	}
 	public void setPercentageWatched(float percentageWatched) {
-		if(percentageWatched < 1 && percentageWatched >= 0){
+		if(percentageWatched <= 1 && percentageWatched >= 0){
 			this.percentageWatched = percentageWatched;
 		}else {
 			this.percentageWatched = 0;
