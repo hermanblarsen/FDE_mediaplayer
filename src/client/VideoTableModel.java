@@ -1,4 +1,4 @@
-package client;
+package src.client;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -7,8 +7,8 @@ public class VideoTableModel extends AbstractTableModel {
 			{"Title",
 			"Duration",
 			"Favourite",
-			"Percentage Watched",
-			"Rating"};
+			"Rating",
+			"Percentage Watched"};
 	private Object[][] tableData;
 	
 	public VideoTableModel() {

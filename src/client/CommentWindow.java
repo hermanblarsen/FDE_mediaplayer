@@ -1,12 +1,18 @@
-package client;
+package src.client;
 
 import javax.swing.JFrame;
+
+import src.server.UserAccount;
+import src.server.VideoFile;
+
+import javax.swing.ButtonModel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.awt.event.ActionEvent;
 import java.awt.Dimension;
@@ -15,8 +21,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JRadioButton;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
-
-import server.UserAccount;
 
 public class CommentWindow extends JFrame{
 	private JTextField commentInputPane;
@@ -32,6 +36,7 @@ public class CommentWindow extends JFrame{
 	private JRadioButton rateRadioButton4;
 	private JRadioButton rateRadioButton5;
 	private JButton rateButton;
+	private int userRating = 0;
 
 	public CommentWindow(String aSelectedVideoTitle, String aSelectedVideoID, Client aConnectedClient, UserAccount aConnectedUser) {
 		this.setLocation(new Point(100, 100));
@@ -87,7 +92,14 @@ public class CommentWindow extends JFrame{
 		
 		JRadioButton rateRadioButton1 = new JRadioButton("1");
 		ratingButtonGroup.add(rateRadioButton1);
+		
 		rateRadioButton1.setBounds(257, 323, 40, 35);
+		rateRadioButton1.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				userRating = 1;
+			}
+		});
 		getContentPane().add(rateRadioButton1);
 		rateRadioButton1.setVerticalTextPosition(SwingConstants.TOP);
 		rateRadioButton1.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -95,6 +107,12 @@ public class CommentWindow extends JFrame{
 		rateRadioButton2 = new JRadioButton("2");
 		ratingButtonGroup.add(rateRadioButton2);
 		rateRadioButton2.setBounds(299, 323, 40, 35);
+		rateRadioButton2.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				userRating = 2;
+			}
+		});
 		getContentPane().add(rateRadioButton2);
 		rateRadioButton2.setVerticalTextPosition(SwingConstants.TOP);
 		rateRadioButton2.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -102,12 +120,24 @@ public class CommentWindow extends JFrame{
 		rateRadioButton3 = new JRadioButton("3");
 		ratingButtonGroup.add(rateRadioButton3);
 		rateRadioButton3.setBounds(341, 323, 40, 35);
+		rateRadioButton3.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				userRating = 3;
+			}
+		});
 		getContentPane().add(rateRadioButton3);
 		rateRadioButton3.setVerticalTextPosition(SwingConstants.TOP);
 		rateRadioButton3.setHorizontalTextPosition(SwingConstants.CENTER);
 		
 		rateRadioButton4 = new JRadioButton("4");
 		ratingButtonGroup.add(rateRadioButton4);
+		rateRadioButton4.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				userRating = 4;
+			}
+		});
 		rateRadioButton4.setBounds(383, 323, 40, 35);
 		getContentPane().add(rateRadioButton4);
 		rateRadioButton4.setVerticalTextPosition(SwingConstants.TOP);
@@ -116,6 +146,12 @@ public class CommentWindow extends JFrame{
 		rateRadioButton5 = new JRadioButton("5");
 		ratingButtonGroup.add(rateRadioButton5);
 		rateRadioButton5.setBounds(425, 323, 40, 35);
+		rateRadioButton5.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				userRating = 5;
+			}
+		});
 		getContentPane().add(rateRadioButton5);
 		rateRadioButton5.setVerticalTextPosition(SwingConstants.TOP);
 		rateRadioButton5.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -125,14 +161,54 @@ public class CommentWindow extends JFrame{
 		rateButton.setBounds(475, 332, 105, 20);
 		getContentPane().add(rateButton);
 		rateButton.addActionListener(new ActionListener() {
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Check for no choice. Then Convert button choice to a rating between 1 and 5. Then send the fucker.
-				
+				if (userRating > 0) {
+					connectedClient.sendToServer("RATE");
+					//send the videoID to the server
+					connectedClient.sendToServer(selectedVideo);
+					connectedClient.sendToServer(userRating);
+					//update the local user rating
+					ArrayList<VideoFile> modifiedVideoList = (ArrayList<VideoFile>) connectedClient.currentUser.getVideos();
+					for (Iterator iterator = modifiedVideoList.iterator(); iterator.hasNext();) {
+						VideoFile video = (VideoFile) iterator.next();
+						if (video.getID().equals(selectedVideo)) {
+							video.setUserRating(userRating);
+						}
+					}
+					connectedClient.currentUser.setVideos(modifiedVideoList);
+					//rating should now be updated, client now has to refresh the table.
+					connectedClient.getVideoListFromServer();
+				}
 			}
 		});
-				
+		//get the user rating
+		for (Iterator iterator = connectedClient.currentUser.getVideos().iterator(); iterator.hasNext();) {
+			VideoFile video = (VideoFile) iterator.next();
+			int Rating = 0;
+			if (video.getID().equals(selectedVideo)) {
+				Rating = video.getUserRating();
+			}
+			switch (Rating) {
+			case 1:
+				rateRadioButton1.setSelected(true);
+				break;
+			case 2:
+				rateRadioButton2.setSelected(true);
+				break;
+			case 3:
+				rateRadioButton3.setSelected(true);
+				break;
+			case 4:
+				rateRadioButton4.setSelected(true);
+				break;
+			case 5:
+				rateRadioButton5.setSelected(true);
+				break;
+			default:
+				break;
+			}
+		}
 		this.getVideoComments();
 	}
 
