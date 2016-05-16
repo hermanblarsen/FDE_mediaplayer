@@ -62,8 +62,6 @@ public class ClientConnection implements Runnable {
 			e.printStackTrace();
 		}
 		
-		
-		
 		userIsLoggedIn = false;
 		while (!userIsLoggedIn && clientIsConnected) {
 			Object clientOutput = null;
@@ -107,10 +105,6 @@ public class ClientConnection implements Runnable {
 
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
-<<<<<<< HEAD
-			
-=======
->>>>>>> 80d3e07fb4cf575927cdedebd97b7605b2205cdf
 			String clientCommandString = "";
 			Object clientOutput = null;
 			clientOutput = readFromObjectStream();
@@ -119,7 +113,7 @@ public class ClientConnection implements Runnable {
 			}
 			if(clientOutput instanceof String) {
 				clientCommandString = (String) clientOutput;
-				//System.out.println("Message recieved from client: " + clientCommandString); //TODO Remove
+				System.out.println("Message recieved from client: " + clientCommandString); //TODO Remove
 			}
 			
 			switch (clientCommandString) {
