@@ -106,8 +106,6 @@ public class ClientConnection implements Runnable {
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
 			
-//			userInput = (String) readFromObjectStream();
-//			System.out.println("Message recieved from client: " + userInput); //TODO put to task bar?
 			String clientCommandString = "";
 			Object clientOutput = null;
 			clientOutput = readFromObjectStream();
