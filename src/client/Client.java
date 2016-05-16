@@ -25,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.*;
@@ -261,6 +262,7 @@ public class Client extends JFrame {
 					updateSliderPositionTask();
 					playPauseButton.setText("Pause");
 					mediaPlayer.play();
+					tabbedPane.setEnabledAt(2, true);
 					tabbedPane.setSelectedIndex(2);
 					//writeStatus("STREAMING...", Color.GREEN); //TODO remove?
 					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":" + communicationPort), Color.GREEN);
@@ -325,7 +327,14 @@ public class Client extends JFrame {
 			@Override
 			public void mouseEntered(MouseEvent e) {
 				subPanelControlMenu.setVisible(true);
+				subPanelAudioMenu.setVisible(true);
 				subPanelControlMenu.repaint();
+				
+				if (autoHideControlPanelsTask != null) {
+					autoHideControlPanelsTask.cancel();
+					updateTimer.purge();
+				}
+				updateAutoHideConsoleTask();
 			}
 		});
 		videoPlayerTab.add(mouseEventPanelControlMenu, BorderLayout.SOUTH);
@@ -461,7 +470,12 @@ public class Client extends JFrame {
 			public void mouseEntered(MouseEvent e) {
 				subPanelAudioMenu.setVisible(true);
 				subPanelAudioMenu.repaint();
-				// System.out.println("Mouse entered the sub_panel_Audio_Menu");
+
+				if (autoHideControlPanelsTask != null) {
+					autoHideControlPanelsTask.cancel();
+					updateTimer.purge();
+				}
+				updateAutoHideConsoleTask();
 			}
 		});
 
@@ -690,21 +704,22 @@ public class Client extends JFrame {
 		updateTimer.schedule(updateSliderPositionTask, 2000, 2000);
 	}
 	
-	private void setupAutoHideConsoleTask() {
+	private void updateAutoHideConsoleTask() {
 		// Cancels a previous task if it exists
 		if (autoHideControlPanelsTask != null) {
 			autoHideControlPanelsTask.cancel();
 			updateTimer.purge();
 		}
 
-		// Creates a new timerTask to update the timer position
 		autoHideControlPanelsTask = new TimerTask() {
 			@Override
 			public void run() {
-				//TODO shitloads here
+				subPanelControlMenu.setVisible(false);
+				subPanelAudioMenu.setVisible(false);
+				subPanelControlMenu.repaint();
 			}
 		};
-		updateTimer.schedule(autoHideControlPanelsTask, 0, 2000);
+		updateTimer.schedule(autoHideControlPanelsTask, 4000);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////
@@ -739,8 +754,9 @@ public class Client extends JFrame {
 		}
 		
 		if (loginRequestAnswerString.equals("LOGINSUCCEDED")) {
-			this.currentUser = (UserAccount) readFromServer();
 			writeStatus("LOGIN SUCCEDED", Color.GREEN);
+			this.currentUser = (UserAccount) readFromServer();
+			
 			userNameField.setBackground(Color.WHITE);
 			passwordField.setBackground(Color.WHITE);
 
@@ -761,7 +777,6 @@ public class Client extends JFrame {
 			// enable other tabs and switch to the list view
 			tabbedPane.setEnabledAt(0, true);
 			tabbedPane.setEnabledAt(1, true);
-			tabbedPane.setEnabledAt(2, true);
 
 			tabbedPane.setSelectedIndex(0);
 			writeStatus(new String(this.currentUser.getUserNameID() + " connected to server " + this.hostAddress + ":" + this.communicationPort), Color.GREEN);
