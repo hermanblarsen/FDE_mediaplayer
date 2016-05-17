@@ -64,13 +64,15 @@ public class Server implements Runnable {
 		return sb.toString();
 	}
 
-	/*public void closeSockets(Socket socket) {
+	public void closeSockets() {
 		try {
-			socket.close();
+			serverSocket.close();
 			System.out.println("Closed server-sockets");
+			System.exit(0);
 		} catch (IOException e) {
 			System.out.println("Failed to close server-sockets");
 			e.printStackTrace();
+			System.exit(0);
 		}
-	}*///TODO remove
+	}
 }

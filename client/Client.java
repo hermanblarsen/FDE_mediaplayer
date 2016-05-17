@@ -46,7 +46,8 @@ import java.awt.GridLayout;
 public class Client extends JFrame {
 
 	protected UserAccount currentUser = null;
-	protected boolean testMode = false;
+	protected boolean connectedToServer = false;
+	protected boolean test_mode = false;
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
 	private int clientSpecificStreamPort;
@@ -56,7 +57,7 @@ public class Client extends JFrame {
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
 
 	private EmbeddedMediaPlayerComponent mediaPlayerComponent;
-	private EmbeddedMediaPlayer mediaPlayer;
+	protected EmbeddedMediaPlayer mediaPlayer;
 
 	private Client thisClient = this;
 	private List<VideoFile> videoList;
@@ -67,14 +68,14 @@ public class Client extends JFrame {
 	private JPanel listViewTab;
 	private JPanel settingsTab;
 	private JPanel videoPlayerTab;
-	private JTabbedPane tabbedPane;
+	protected JTabbedPane tabbedPane;
 	private JTextField userNameField;
 	private JPasswordField passwordField;
 	private JTextField searchField;
 	private JButton loginButton;
 	private JPanel statusPanel;
 	private JTextPane clientStatusBar;
-	private JTable listTable;
+	protected JTable listTable;
 	private VideoTableModel listTableModel;
 	private TableRowSorter<VideoTableModel> listTableRowSorter;
 	private VideoFile currentlyStreamingVideo;
@@ -86,10 +87,11 @@ public class Client extends JFrame {
 	private TimerTask autoHideControlPanelsTask;
 
 	private ModifiedTimerTask skipTask;
-	private JButton playPauseButton;
-	private JButton stopButton;
+	protected JButton playPauseButton;
+	protected JButton stopButton;
 	private JScrollPane listScrollPanel;
 	private Boolean showListGrid;
+	protected JButton streamSelectedVideoButton;
 
 	/*
 	 * used to temporarily disable the slider event when the slider value is
@@ -124,11 +126,12 @@ public class Client extends JFrame {
 	/**
 	 * Launch the application.
 	 */
+	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Client newClient = new Client();
+					Client newClient = new Client(false);
 					newClient.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -137,11 +140,13 @@ public class Client extends JFrame {
 		});
 	}
 
-	public Client() {
+	public Client(boolean testing) {
 		setupGUI();
-		if (!testMode) {
+		test_mode = testing;
+		if(!testing){
 			connectToTheServer();
 		}
+			
 	}
 
 	/**
@@ -239,7 +244,7 @@ public class Client extends JFrame {
 		});
 		listViewWestPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
-		JButton streamSelectedVideoButton = new JButton("Stream");
+		streamSelectedVideoButton = new JButton("Stream");
 		listViewWestPanel.add(streamSelectedVideoButton);
 		streamSelectedVideoButton.addActionListener(new ActionListener() {
 			@Override
@@ -534,11 +539,11 @@ public class Client extends JFrame {
 	/**
 	 * Connects to the default host:port
 	 */
-	public void connectToTheServer() {
-		connectToTheServer(this.hostAddress, this.communicationPort);
+	public boolean connectToTheServer() {
+		return connectToTheServer(this.hostAddress, this.communicationPort);
 	}
 
-	public void connectToTheServer(String specifiedHostName, int specifiedPortNumber) {
+	public boolean connectToTheServer(String specifiedHostName, int specifiedPortNumber) {
 		writeStatus(new String("Connecting to " + specifiedHostName + ":" + specifiedPortNumber + "..."), Color.YELLOW);
 		try {
 			this.serverSocket = new Socket(specifiedHostName, specifiedPortNumber);
@@ -550,16 +555,20 @@ public class Client extends JFrame {
 			userNameField.setEnabled(true);
 			passwordField.setEnabled(true);
 			loginButton.setEnabled(true);
+			connectedToServer = true;
+			return connectedToServer;
 		} catch (UnknownHostException e) {
 			writeStatus(new String(
 					"Unknown host, unable to connect to: " + specifiedHostName + ". Trying to reconnect soon..."),
 					Color.RED);
-			retryConnectionToServer();
 		} catch (IOException e) {
 			writeStatus(new String("Couldn't open I/O connection " + specifiedHostName + ":" + specifiedPortNumber
 					+ ". Trying to reconnect soon..."), Color.RED);
+		}
+		if(!connectedToServer){
 			retryConnectionToServer();
 		}
+		return connectedToServer;
 	}
 
 	private void retryConnectionToServer() {
