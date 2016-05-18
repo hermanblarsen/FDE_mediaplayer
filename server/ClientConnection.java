@@ -35,6 +35,7 @@ public class ClientConnection implements Runnable {
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
 	private String xmlListDatapath = "serverRepository/videoList.xml";
 	private String videoRepositoryDatapath = "serverRepository/";
+	private String currentlyStreamingvideoID;
 
 	public ClientConnection(Socket clientSocket, int streamPort, String streamingOptions) {
 		this.connectedClientSocket = clientSocket;
@@ -157,14 +158,15 @@ public class ClientConnection implements Runnable {
 					position = mediaPlayer.getPosition();
 				}
 				sendThroughObjectStream(position);
+				updateUserWatchedPercentage(position);
 				break;
 			case "GETLIST":
 				sendVideoListToClient();
 				break;	
 			case "STREAM":
-				String videoID = "";
-				videoID = (String) readFromObjectStream();
-				setUpMediaStream(videoID);
+				currentlyStreamingvideoID = "";
+				currentlyStreamingvideoID = (String) readFromObjectStream();
+				setUpMediaStream(currentlyStreamingvideoID);
 				break;
 			case "REQUESTSTREAMPORT":
 				sendThroughObjectStream(this.streamPort);
@@ -255,6 +257,24 @@ public class ClientConnection implements Runnable {
 				break;
 			}
 		}
+	}
+
+	//update the percentage watched for the current video and user
+	private void updateUserWatchedPercentage(float newPercentage) {
+		
+		for (UserAccount user : userList){
+			if (user.getUserNameID().equals(loggedInUser.getUserNameID())){
+				for(VideoFile tempVideo : user.getVideos()){
+					if(tempVideo.getID().equals(currentlyStreamingvideoID)){
+						tempVideo.setPercentageWatched(newPercentage);
+						UserListXmlParser userListXmlParser = new UserListXmlParser();
+						userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
+						break;
+					}
+				}
+			}
+		}
+		
 	}
 
 	private void updateVideoListXML() {
