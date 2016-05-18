@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class VideoListXmlParserTest {
 	
-	/*private XMLReader reader;
+	private VideoListXmlParser reader;
 	private List<VideoFile> videoList;
 	private VideoFile videoFile0;
 	private VideoFile videoFile1;
@@ -17,8 +17,8 @@ public class VideoListXmlParserTest {
 
 	@Before
 	public void setUp() throws Exception {
-		reader = new XMLReader();
-		videoList = reader.getList("testLists/videoList.xml");
+		reader = new VideoListXmlParser("testLists/videoList.xml");
+		videoList = reader.parseVideoList();
 		videoFile0 = videoList.get(0);
 		videoFile1 = videoList.get(1);
 		videoFile2 = videoList.get(2);
@@ -55,6 +55,7 @@ public class VideoListXmlParserTest {
 		assertTrue(videoFile2.getID().equals("20120102b4"));
 		assertTrue(videoFile2.getTitle().equals("Prometheus"));
 		assertTrue(videoFile2.getFilename().equals("prometheus-featureukFhp.mp4"));
-	}*/
+	}
+	
 
 }

@@ -42,7 +42,7 @@ public class VideoListXmlParser {
 	
 	public List<VideoFile> parseVideoList(){
 		List<VideoFile> videoList = new ArrayList<VideoFile>();
-		//take structure appart
+		//take structure apart
 		NodeList root = document.getElementsByTagName("video");
 		for (int i = 0; i < root.getLength(); i++) {
 			VideoFile video = new VideoFile();
