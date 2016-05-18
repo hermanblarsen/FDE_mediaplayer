@@ -74,13 +74,14 @@ public class Client extends JFrame {
 	private JTextField searchField;
 	private JButton loginButton;
 	private JPanel statusPanel;
-	private JTextPane clientStatusBar;
+	protected JTextPane clientStatusBar;
 	protected JTable listTable;
 	private VideoTableModel listTableModel;
 	private TableRowSorter<VideoTableModel> listTableRowSorter;
-	private VideoFile currentlyStreamingVideo;
+	protected VideoFile currentlyStreamingVideo;
+	protected float severStreamPosition;
 
-	private JSlider positionTimeSlider;
+	public JSlider positionTimeSlider;
 	private Timer updateTimer = new Timer();
 	private boolean sliderEventActive = true;
 	private TimerTask updateSliderPositionTask;
@@ -219,6 +220,8 @@ public class Client extends JFrame {
 
 		JButton commentButton = new JButton("Comment");
 		commentButton.addActionListener(new ActionListener() {
+			private CommentWindow commentsWindow;
+
 			public void actionPerformed(ActionEvent arg0) {
 				boolean noVideoSelected = false;
 				String videoTitle = "";
@@ -237,7 +240,7 @@ public class Client extends JFrame {
 					}
 					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":"
 							+ communicationPort), Color.GREEN);
-					CommentWindow commentsWindow = new CommentWindow(videoTitle, videoID, thisClient, currentUser);
+					commentsWindow = new CommentWindow(videoTitle, videoID, thisClient, currentUser);
 					commentsWindow.show();
 				}
 			}
@@ -318,8 +321,7 @@ public class Client extends JFrame {
 							+ communicationPort), Color.GREEN);
 
 					updateSliderPositionTask();
-					playPauseButton.setText("Pause");
-					mediaPlayer.play();
+					playPlayer();
 				}
 			}
 		});
@@ -796,13 +798,16 @@ public class Client extends JFrame {
 
 		// Creates a new timerTask to update the timer position
 		updateSliderPositionTask = new TimerTask() {
+			private float positionInTime;
+
 			@Override
 			public void run() {
 				sendToServer("STREAM POSITION");
-				float positionInTime = 0.0f;
+				positionInTime = 0.0f;
 				Object inputFromServer = readFromServer();
 				if (inputFromServer instanceof Float) {
 					positionInTime = (float) inputFromServer;
+					severStreamPosition = positionInTime;
 				}
 				if (positionInTime >= 0 && positionInTime <= 0.99) {
 					// prevent the change listener from firing
@@ -851,7 +856,7 @@ public class Client extends JFrame {
 		updateTimer.schedule(autoHideControlPanelsTask, 4000);
 	}
 
-	private void writeStatus(String statusMessage, Color statusColor) {
+	protected void writeStatus(String statusMessage, Color statusColor) {
 		clientStatusBar.setText(statusMessage);
 		clientStatusBar.setBackground(statusColor);
 	}
