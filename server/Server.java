@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server implements Runnable {
 	private ServerSocket serverSocket;
@@ -13,7 +14,8 @@ public class Server implements Runnable {
 	private int initialStreamPort = 5555;
 	private String streamingOptions = formatRtpStream(serverAddress, initialStreamPort);
 	private Socket clientSocket;
-	private List<ClientConnection> clientConnectionList = new ArrayList<ClientConnection>();
+	protected List<ClientConnection> clientConnectionList = new CopyOnWriteArrayList<>();
+	protected ClientConnection connectedClient;
 
 	public static void main(String[] args) {
 		Thread serverThread = new Thread(new Server());
@@ -40,14 +42,12 @@ public class Server implements Runnable {
 				// Assign a streaming port to the client
 				int newClientStreamPort = initialStreamPort + this.clientConnectionList.size();
 				streamingOptions = formatRtpStream(this.serverAddress, newClientStreamPort);
-				// Create a clientConnection in a separate thread that deals
-				// with further communication
-				ClientConnection connectedClient = new ClientConnection(this.clientSocket, newClientStreamPort,
+				connectedClient = new ClientConnection(this.clientSocket, newClientStreamPort,
 						streamingOptions);
 				this.clientConnectionList.add(connectedClient);
 				Thread clientThread = new Thread(connectedClient);
 				clientThread.start();
-			} catch (IOException e) {
+			} catch (IOException e ) {
 				System.out.println("ERROR! Connection to client failed");
 				e.printStackTrace();
 			}
@@ -74,5 +74,10 @@ public class Server implements Runnable {
 			e.printStackTrace();
 			System.exit(0);
 		}
+	}
+	
+	protected synchronized ClientConnection getClientConnection(int index){
+		ClientConnection client = this.clientConnectionList.get(index);
+		return client;
 	}
 }

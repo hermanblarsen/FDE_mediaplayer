@@ -21,7 +21,7 @@ public class ClientConnection implements Runnable {
 	private int streamPort;
 	private Boolean clientIsConnected;
 	private Boolean userIsLoggedIn;
-	private UserAccount loggedInUser;
+	protected UserAccount loggedInUser;
 	private Socket connectedClientSocket;
 	private ObjectOutputStream outputToClient;
 	private ObjectInputStream inputFromClient;
@@ -36,6 +36,7 @@ public class ClientConnection implements Runnable {
 	private String xmlListDatapath = "serverRepository/videoList.xml";
 	private String videoRepositoryDatapath = "serverRepository/";
 	private String currentlyStreamingvideoID;
+	protected String clientCommandString;
 
 	public ClientConnection(Socket clientSocket, int streamPort, String streamingOptions) {
 		this.connectedClientSocket = clientSocket;
@@ -126,7 +127,7 @@ public class ClientConnection implements Runnable {
 
 	private void respondToClientCommands() {
 		while (clientIsConnected) {
-			String clientCommandString = "";
+			clientCommandString = "";
 			Object clientOutput = null;
 			clientOutput = readFromObjectStream();
 			if (clientOutput == null) {
