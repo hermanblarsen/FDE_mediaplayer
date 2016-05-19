@@ -167,15 +167,11 @@ public class ClientConnectionTest {
 		client.sendToServer("20120213a2");
 		assertTrue(connection.loggedInUser.getVideos().get(0).getID().equals("20120213a2"));
 		float initialPercentage = connection.loggedInUser.getVideos().get(0).getPercentageWatched();
-		Thread.sleep(300);
-		Thread.sleep(2000);//stream for a while so that position updates
+		Thread.sleep(3000);//stream for a while so that position updates
 		client.sendToServer("STREAM POSITION");//will cause list update
 		client.sendToServer("PAUSE");
-		Thread.sleep(300);
+		Thread.sleep(1500);
 		float finalPercentage = connection.loggedInUser.getVideos().get(0).getPercentageWatched();
 		assertTrue(initialPercentage < finalPercentage);
 	}
-	
-	
-
 }
