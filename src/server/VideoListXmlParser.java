@@ -1,4 +1,5 @@
 package server;
+
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 
 import java.io.IOException;
@@ -20,15 +21,22 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
 public class VideoListXmlParser {
 
 	private DOMParser xmlParser;
 	private Document document;
 	private String videoListXmlDatapath = "serverRepository/videoList.xml";
-	
-	public VideoListXmlParser(String videoListPath){
+
+	public VideoListXmlParser(String videoListPath) {
 		xmlParser = new DOMParser();
-	    try {
+		try {
 			xmlParser.parse(videoListPath);
 		} catch (SAXException e) {
 			// TODO Auto-generated catch block
@@ -37,12 +45,12 @@ public class VideoListXmlParser {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	    document = xmlParser.getDocument();
+		document = xmlParser.getDocument();
 	}
-	
-	public List<VideoFile> parseVideoList(){
+
+	public List<VideoFile> parseVideoList() {
 		List<VideoFile> videoList = new ArrayList<VideoFile>();
-		//take structure apart
+		// take structure apart
 		NodeList root = document.getElementsByTagName("video");
 		for (int i = 0; i < root.getLength(); i++) {
 			VideoFile video = new VideoFile();
@@ -61,11 +69,11 @@ public class VideoListXmlParser {
 						video.setFilename(subElement.getTextContent());
 						break;
 					case "comments":
-						//getting all the comment nodes
+						// getting all the comment nodes
 						ArrayList<String> tempcommentList = new ArrayList<String>();
 						NodeList commentList = subElement.getChildNodes();
 						for (int k = 0; k < commentList.getLength(); k++) {
-							if(commentList.item(k).getNodeType() == Node.ELEMENT_NODE){
+							if (commentList.item(k).getNodeType() == Node.ELEMENT_NODE) {
 								String comment = ((Element) commentList.item(k)).getTextContent();
 								tempcommentList.add(comment);
 							}
@@ -87,30 +95,29 @@ public class VideoListXmlParser {
 		}
 		return videoList;
 	}
-	
-	public void writeVideoList(List<VideoFile> videoList){
+
+	public void writeVideoList(List<VideoFile> videoList) {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		try {
 			DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 			Document doc = docBuilder.newDocument();
-			//root element
+			// root element
 			Element rootElement = doc.createElement("videoList");
 			doc.appendChild(rootElement);
 			for (VideoFile video : videoList) {
-				//video element
+				// video element
 				Element videoNode = doc.createElement("video");
 				videoNode.setAttribute("id", video.getID());
-				
+
 				Element title = doc.createElement("title");
 				title.setTextContent(video.getTitle());
 				videoNode.appendChild(title);
-				
+
 				Element filename = doc.createElement("filename");
 				filename.setTextContent(video.getFilename());
 				videoNode.appendChild(filename);
-				
-				
-				//if there are comments available, write them into the xml
+
+				// if there are comments available, write them into the xml
 				ArrayList<String> temporary_commentList = (ArrayList<String>) video.getPublicCommentsList();
 				if (temporary_commentList != null) {
 					Element comments = doc.createElement("comments");
@@ -118,34 +125,33 @@ public class VideoListXmlParser {
 						Element temp_comment = doc.createElement("comment");
 						temp_comment.setTextContent(comment);
 						comments.appendChild(temp_comment);
-					} 
+					}
 					videoNode.appendChild(comments);
 				}
-				
+
 				Element publicRating = doc.createElement("publicRating");
 				publicRating.setTextContent(Float.toString(video.getPublicRating()));
 				videoNode.appendChild(publicRating);
-				
+
 				Element userRating = doc.createElement("userRating");
 				userRating.setTextContent(Integer.toString(video.getUserRating()));
 				videoNode.appendChild(userRating);
-				
+
 				rootElement.appendChild(videoNode);
 			}
-			
+
 			try {
-			// write the content into xml file
-			TransformerFactory transformerFactory = TransformerFactory.newInstance();
-			Transformer transformer = transformerFactory.newTransformer();
-			DOMSource source = new DOMSource(doc);
-			StreamResult result = new StreamResult(new File(videoListXmlDatapath));
+				// write the content into xml file
+				TransformerFactory transformerFactory = TransformerFactory.newInstance();
+				Transformer transformer = transformerFactory.newTransformer();
+				DOMSource source = new DOMSource(doc);
+				StreamResult result = new StreamResult(new File(videoListXmlDatapath));
 
 				transformer.transform(source, result);
 			} catch (TransformerException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
 		} catch (ParserConfigurationException e) {
 			e.printStackTrace();
 		}

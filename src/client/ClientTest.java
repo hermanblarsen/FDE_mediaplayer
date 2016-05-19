@@ -3,205 +3,200 @@ package client;
 import static org.junit.Assert.*;
 
 import java.awt.Color;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.List;
-import javax.swing.JComboBox;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xml.sax.SAXParseException;
-
-import com.sun.jmx.snmp.tasks.ThreadService;
-
-import junit.framework.Assert;
 import server.*;
 
+/**
+ * The ClientTest tests various functions in the client, including working login
+ * features, verification if correct list and content, and correct behaviour of
+ * media player components and features (play, pause, stop, stream, stream from
+ * last position(continue), etc. 
+ */
 public class ClientTest {
-	private  Client	testClient;
-	private Server server;
-	private static Thread t;
-	
-	@Before 
+	private Client testClient;
+	private static Thread serverThread;
+
+	@Before
 	public void setUp() throws Exception {
-		
+
 	}
-	
+
 	@After
-	public void tearDown() throws Exception{
+	public void tearDown() throws Exception {
 		testClient.closeConnection();
 	}
-	
+
 	@BeforeClass
-	public static void setUpServer(){
+	public static void setUpServer() {
 		Server server = new Server();
-		t = new Thread(server);
-		t.start();
+		serverThread = new Thread(server);
+		serverThread.start();
 	}
 
 	@Test
-	public void ClientLoginWithWrongPassword(){
+	public void clientDeniedAccessWithWrongCredentials() {
 		testClient = new Client(false);
 		assertFalse(testClient.login("wrongUser", "WrongPassword"));
 	}
-	
-	@Test
-	public void ClientLoginWithRightPassword() throws InterruptedException {
 
+	@Test
+	public void clientGrantedAccessWithCorrectCredentials() throws InterruptedException {
 		testClient = new Client(false);
 		assertTrue(testClient.login("UserName1", "Password1"));
-	}	
-	
+	}
+
 	@Test
-	public void ClientReceivedCorrectlyFormattedList(){
+	public void clientReceivesCorrectlyFormattedList() {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		assertTrue(testClient.validateVideoListContentsAndFormat());
 	}
-	
+
 	@Test
-	public void SelectingVideoAndStreaming(){
+	public void verifyVideoSelectionAndStreaming() {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 		testClient.streamSelectedVideoButton.doClick();
 		assertTrue(testClient.mediaPlayer.isPlaying());
 	}
-	
+
 	@Test
-	public void SelectingVideoStreamingAndStopping(){
+	public void verifyPlayStop() {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 		testClient.streamSelectedVideoButton.doClick();
 		assertTrue(testClient.mediaPlayer.isPlaying());
-		//video streams now
+		// video streams,click stop
 		testClient.stopButton.doClick();
-		//stream should be stopped
 		assertFalse(testClient.mediaPlayer.isPlaying());
 	}
-	
+
 	@Test
-	public void SelectingVideoStreamingAndPausingThenResuming() throws InterruptedException{
+	public void verifyPlayPauseAndResumedPlayback() throws InterruptedException {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 		testClient.streamSelectedVideoButton.doClick();
 		assertTrue(testClient.mediaPlayer.isPlaying());
-		//video streams now
+		// video streams, click pause
 		testClient.playPauseButton.doClick();
-		//stream should be paused
 		Thread.sleep(100);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 		testClient.playPauseButton.doClick();
 		assertTrue(testClient.mediaPlayer.isPlaying());
 	}
-	
+
 	@Test
-	public void SelectingVideoStreamingAndStoppingThenRestarting() throws InterruptedException{
+	public void verifyStopAndResumedPlayback() throws InterruptedException {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 		testClient.streamSelectedVideoButton.doClick();
 		assertTrue(testClient.mediaPlayer.isPlaying());
-		//video streams now
+		// video streams, click stop
 		testClient.stopButton.doClick();
-		//stream should be paused
 		Thread.sleep(100);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 		testClient.playPauseButton.doClick();
 		Thread.sleep(100);
 		assertTrue(testClient.mediaPlayer.isPlaying());
 	}
-	
+
 	@Test
-	public void VideoPausesWhenTabChanged() throws InterruptedException{
+	public void verifyPausedVideoWhenExitingVideoTab() throws InterruptedException {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		testClient.streamSelectedVideoButton.doClick();
 		Thread.sleep(100);
 		testClient.tabbedPane.setSelectedIndex(0);
 		assertFalse(testClient.mediaPlayer.isPlaying());
 	}
-	
+
 	@Test
-	public void TestTheStatusBar(){
-		//start client in test mode so that it does not automatically connect.
+	public void verifyCorrectOutputStatusBar() {
+		// start client in test mode so that it does not automatically connect
+		// to server, so no interference inputs fails the test
 		testClient = new Client(true);
 		testClient.writeStatus("", Color.WHITE);
 		assertTrue(testClient.clientStatusBar.getBackground() == Color.WHITE);
 		assertTrue(testClient.clientStatusBar.getText().equals(""));
-		
-		testClient.writeStatus("TEST TEST TEST", Color.RED);
+
+		testClient.writeStatus("THIS IS !(not) A TEST", Color.RED);
 		assertTrue(testClient.clientStatusBar.getBackground() == Color.RED);
-		assertTrue(testClient.clientStatusBar.getText().equals("TEST TEST TEST"));
-		
-		testClient.writeStatus("abcdefghijklmnopqrstuvwxyz", Color.GREEN);
+		assertTrue(testClient.clientStatusBar.getText().equals("THIS IS !(not) A TEST"));
+
+		testClient.writeStatus("THIS IS NOT A SPELLING MISTAKE, BUT A TEST! HUE HUE HUE", Color.GREEN);
 		assertTrue(testClient.clientStatusBar.getBackground() == Color.GREEN);
-		assertTrue(testClient.clientStatusBar.getText().equals("abcdefghijklmnopqrstuvwxyz"));
+		assertTrue(
+				testClient.clientStatusBar.getText().equals("THIS IS NOT A SPELLING MISTAKE, BUT A TEST! HUE HUE HUE"));
 	}
-	
+
 	@Test
-	public void TestThatTheCorrectUserLogsIn(){
+	public void verifyThatCorrectUserIsLoggedIn() {
 		testClient = new Client(false);
-		//make sure that the logged in user is null before login
+		// make sure that the logged in user is null before login
 		assertNull(testClient.currentUser);
-		//login to useraccount with the most creative username and the most secure password
+
 		testClient.login("123", "123");
-		//now test that the user is actually logged in
+		// now test that the user is actually logged in
 		assertTrue(testClient.currentUser.getUserNameID().equals("123"));
 	}
-	
+
 	@Test
-	public void SkipToVideoPosition() throws InterruptedException{
+	public void verifySkipppingToVideoPosition() throws InterruptedException {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		assertFalse(testClient.mediaPlayer.isPlaying());
+
 		testClient.streamSelectedVideoButton.doClick();
 		assertTrue(testClient.mediaPlayer.isPlaying());
-		Thread.sleep(3000);//wait for the stream position to update
+
+		Thread.sleep(3000);// wait for the stream position to update
 		float oldPosition = testClient.severStreamPosition;
-		//set the value of the position slider which should fire the skip event.
+		// set the value of the position slider which should fire the skip
+		// event.
 		testClient.positionTimeSlider.setValue(80);
-		Thread.sleep(6000);//wait for the stream position to update
+		Thread.sleep(6000);// wait for the stream position to update (slightly
+							// laggy, hence the larger delay)
 		assertTrue(oldPosition < testClient.severStreamPosition);
 	}
-	
+
 	@Test
-	public void resumeFromPreviousPosition() throws InterruptedException{
+	public void verifyContinuePlayback() throws InterruptedException {
 		testClient = new Client(false);
-		//log in 
 		testClient.login("UserName1", "Password1");
+
 		testClient.listTable.setRowSelectionInterval(0, 0);
 		testClient.streamSelectedVideoButton.doClick();
-		//skip to some position
+
+		// skip to some position
 		testClient.positionTimeSlider.setValue(80);
 		float oldStreamPosition = testClient.severStreamPosition;
-		//switch back to the video tab
+		// switch back to the video tab
 		testClient.tabbedPane.setSelectedIndex(0);
 		testClient.listTable.setRowSelectionInterval(0, 0);
-		Thread.sleep(6000);//wait for the stream position to update
-		testClient.streamSelectedVideoButton.doClick();
-		Thread.sleep(6000);//wait for the stream position to update
+		Thread.sleep(6000);// wait for the stream position to update
+		testClient.streamSelectedVideoFromLastPositionButton.doClick();
+		Thread.sleep(6000);// wait for the stream position to update
 		float currentStreamPosition = testClient.severStreamPosition;
 		assertTrue(currentStreamPosition >= oldStreamPosition);
 	}
-	
-	
-
 }

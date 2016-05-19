@@ -3,19 +3,25 @@ package server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * The Server: (Acts more like a switchboard than a server, but we kept the name
+ * since it handles the initial communication request from all clients.) Its
+ * only job is to delegate a streaming port and a socket to all clients
+ * connecting, after which further communication is dealt with by the
+ * ClientConnection.
+ */
 public class Server implements Runnable {
+	protected ClientConnection connectedClient;
+	private Socket clientSocket;
 	private ServerSocket serverSocket;
 	private String serverAddress = "127.0.0.1";
 	private int communicationPort = 1337;
 	private int initialStreamPort = 5555;
 	private String streamingOptions = formatRtpStream(serverAddress, initialStreamPort);
-	private Socket clientSocket;
 	protected List<ClientConnection> clientConnectionList = new CopyOnWriteArrayList<>();
-	protected ClientConnection connectedClient;
 
 	public static void main(String[] args) {
 		Thread serverThread = new Thread(new Server());
@@ -23,7 +29,7 @@ public class Server implements Runnable {
 	}
 
 	public void run() {
-		// Create general socket for communication with clients.
+		// Create general socket for initial communication with clients.
 		try {
 			serverSocket = new ServerSocket(communicationPort);
 		} catch (IOException e) {
@@ -31,7 +37,8 @@ public class Server implements Runnable {
 		}
 
 		// Await client connections, start a ClientConnection if a client
-		// connects.
+		// connects and hand over socket and streaming port to respective
+		// ClientConnection.
 		while (true) {
 			try {
 				// Wait for client to connect to socket
@@ -39,19 +46,22 @@ public class Server implements Runnable {
 						"Successfully opened socket on port: " + communicationPort + ", awaiting connection...");
 				this.clientSocket = this.serverSocket.accept();
 				System.out.println("Successfully connected to client.");
-				// Assign a streaming port to the client
+
+				// Assign an available streaming port to the client
 				int newClientStreamPort = initialStreamPort + this.clientConnectionList.size();
 				streamingOptions = formatRtpStream(this.serverAddress, newClientStreamPort);
-				connectedClient = new ClientConnection(this.clientSocket, newClientStreamPort,
-						streamingOptions);
+				connectedClient = new ClientConnection(this.clientSocket, newClientStreamPort, streamingOptions);
 				this.clientConnectionList.add(connectedClient);
+
 				Thread clientThread = new Thread(connectedClient);
 				clientThread.start();
-			} catch (IOException e ) {
+			} catch (IOException e) {
 				System.out.println("ERROR! Connection to client failed");
 				e.printStackTrace();
 			}
 		}
+		// Sockets are handed over to ClientConnection where they are closed
+		// after use. Closing sockets in this class is thus not needed.
 	}
 
 	private String formatRtpStream(String serverAddress, int streamPort) {
@@ -64,19 +74,7 @@ public class Server implements Runnable {
 		return sb.toString();
 	}
 
-	public void closeSockets() {
-		try {
-			serverSocket.close();
-			System.out.println("Closed server-sockets");
-			System.exit(0);
-		} catch (IOException e) {
-			System.out.println("Failed to close server-sockets");
-			e.printStackTrace();
-			System.exit(0);
-		}
-	}
-	
-	protected synchronized ClientConnection getClientConnection(int index){
+	protected synchronized ClientConnection getClientConnection(int index) {
 		ClientConnection client = this.clientConnectionList.get(index);
 		return client;
 	}

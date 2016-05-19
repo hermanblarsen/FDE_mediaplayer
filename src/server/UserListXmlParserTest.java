@@ -7,6 +7,13 @@ import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
 public class UserListXmlParserTest {
 
 	private ArrayList<UserAccount> userList;
@@ -33,11 +40,11 @@ public class UserListXmlParserTest {
 	}
 
 	@Test
-	public void testIfUserVideoListIsParsedCorrectly() {
+	public void verifyListIsParsedCorrectly() {
 		UserAccount user = userList.get(0);
 		assertFalse(user.getVideos().isEmpty());
 		ArrayList<VideoFile> videoList = (ArrayList<VideoFile>) user.getVideos();
-		boolean MonstersInc = false , Avengers = false , Prometheus = false;
+		boolean MonstersInc = false, Avengers = false, Prometheus = false;
 		for (VideoFile video : videoList) {
 			String videoID = video.getID();
 			if (videoID.equals("20120213a2")) {
@@ -52,15 +59,15 @@ public class UserListXmlParserTest {
 		}
 		assertTrue(MonstersInc && Avengers && Prometheus);
 	}
-	
+
 	@Test
-	public void testThatListIsWrittenCorrectly(){
-		//create a new user account
+	public void verifyListIsWrittenCorrectly() {
+		// create a new user account
 		UserAccount newUser = new UserAccount("testUser", "test123");
-		//add videos from a user to the new account
+		// add videos from a user to the new account
 		newUser.getVideos().addAll(userList.get(0).getVideos());
-		//modify the added list
-		for(VideoFile video : newUser.getVideos()){
+		// modify the added list
+		for (VideoFile video : newUser.getVideos()) {
 			String videoID = video.getID();
 			if (videoID.equals("20120213a2")) {
 				video.setIsFavourite(true);
@@ -80,13 +87,14 @@ public class UserListXmlParserTest {
 		}
 		userList.add(newUser);
 		reader.writeUserListToXML(userList);
-		//now re read the list and check if the information previously added is present
-		userList = null;//make sure the previous list is gone
+		// now re read the list and check if the information previously added is
+		// present
+		userList = null;// make sure the previous list is gone
 		userList = reader.parseUserAccountList();
-		newUser = userList.get(userList.size()-1);
+		newUser = userList.get(userList.size() - 1);
 		assertTrue(newUser.getPassword().equals("test123"));
 		assertTrue(newUser.getUserNameID().equals("testUser"));
-		for(VideoFile video : newUser.getVideos()){
+		for (VideoFile video : newUser.getVideos()) {
 			String videoID = video.getID();
 			boolean isFavourite = video.getIsFavourite();
 			float percentageWatched = video.getPercentageWatched();
@@ -107,9 +115,8 @@ public class UserListXmlParserTest {
 				assertTrue(rating == 5);
 			}
 		}
-		//now to clean up remove the latest addition and reqrite list
-		userList.remove(userList.size()-1);
+		// now to clean up remove the latest addition and reqrite list
+		userList.remove(userList.size() - 1);
 		reader.writeUserListToXML(userList);
 	}
-
 }

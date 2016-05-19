@@ -1,62 +1,52 @@
 package server;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The VideoFile contains information about the video such as ID, title,
+ * filename and length(duration). Additionally it can hold user specific
+ * details, such as isFavourite, percentage watched and user rating, or public
+ * ratings and comments,
+ * 
+ * 
+ * 
+ * 
+ */
 public class VideoFile implements Serializable {
 
 	private String ID;
 	private String title;
 	private String filename;
-	private Boolean isFavourite = false;
 	private int durationInSeconds = 0;
-	private float publicRating = 0;// the average of all ratings
-	private int userRating = 0;// the individual rating of the user
+
+	private Boolean isFavourite = false;
 	private float percentageWatched = 0;
+	private int userRating = 0; // a users individual rating of the movie
+
+	private float publicRating = 0; // the movies average ratings
 	private List<String> publicCommentsList;
 
-	/**
-	 * @return the iD
-	 */
 	public String getID() {
 		return this.ID;
 	}
 
-	/**
-	 * @param iD
-	 *            the iD to set
-	 */
 	public void setID(String iD) {
 		this.ID = iD;
 	}
 
-	/**
-	 * @return the title
-	 */
 	public String getTitle() {
 		return this.title;
 	}
 
-	/**
-	 * @param title
-	 *            the title to set
-	 */
 	public void setTitle(String title) {
 		this.title = title;
 	}
 
-	/**
-	 * @return the filename
-	 */
 	public String getFilename() {
 		return this.filename;
 	}
 
-	/**
-	 * @param filename
-	 *            the filename to set
-	 */
 	public void setFilename(String filename) {
 		this.filename = filename;
 	}

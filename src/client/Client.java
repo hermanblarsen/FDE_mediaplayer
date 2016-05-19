@@ -1,5 +1,8 @@
 package client;
 
+import server.UserAccount;
+import server.VideoFile;
+
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.io.IOException;
@@ -17,8 +20,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import server.UserAccount;
-import server.VideoFile;
 import javax.swing.JComboBox;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -43,11 +44,19 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.awt.GridLayout;
 
+/**
+ * The Client interacts with the user by a GUI, and is the watching end of a
+ * streaming media player. The user can log in with specified user accounts
+ * (eg.: "123", "123"). The client interacts with the server end of the project,
+ * initially connecting to a Server, and later communicating with a given
+ * ClientConnection until the Client is shut down. To start the streaming
+ * project, run the Client and the Server in either order.
+ */
 public class Client extends JFrame {
 
 	protected UserAccount currentUser = null;
 	protected boolean connectedToServer = false;
-	protected boolean test_mode = false;
+	protected boolean isTestMode = false;
 	protected Socket serverSocket;
 	private int communicationPort = 1337;
 	private int clientSpecificStreamPort;
@@ -93,12 +102,14 @@ public class Client extends JFrame {
 	private JScrollPane listScrollPanel;
 	private Boolean showListGrid;
 	protected JButton streamSelectedVideoButton;
+	protected JButton streamSelectedVideoFromLastPositionButton;
 
 	/*
-	 * used to temporarily disable the slider event when the slider value is
-	 * changed by code rather than by the user. the code changes the slider
-	 * value when a video is streaming in order to display the current position
-	 * of the stream.
+	 * Internal class used to temporarily disable slider changeListeners when
+	 * its value is changed by certain code rather than by the user. In order to
+	 * display the current position of the video stream, the slider position is
+	 * set by a timer event every 2 seconds. When this event occurs, the change
+	 * listener for the slider is temporarily disabled by this internal method.
 	 */
 	class ModifiedTimerTask extends TimerTask {
 		private float sliderPosition;
@@ -127,7 +138,6 @@ public class Client extends JFrame {
 	/**
 	 * Launch the application.
 	 */
-	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -141,17 +151,23 @@ public class Client extends JFrame {
 		});
 	}
 
-	public Client(boolean testing) {
+	public Client(boolean startInTestMode) {
+		this.isTestMode = startInTestMode;
 		setupGUI();
-		test_mode = testing;
-		if(!testing){
+		setupActionListeners();
+
+		if (!startInTestMode) {
 			connectToTheServer();
 		}
-			
+	}
+
+	private void setupActionListeners() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/**
-	 * Sets up the Client GUI. The GUI was buildt using the eclipse
+	 * Sets up the Client GUI. The GUI was built using the eclipse
 	 * windowbuilder extension
 	 */
 	private void setupGUI() {
@@ -283,7 +299,7 @@ public class Client extends JFrame {
 			}
 		});
 
-		JButton streamSelectedVideoFromLastPositionButton = new JButton("Continue");
+		streamSelectedVideoFromLastPositionButton = new JButton("Continue");
 		listViewWestPanel.add(streamSelectedVideoFromLastPositionButton);
 		streamSelectedVideoFromLastPositionButton.addActionListener(new ActionListener() {
 			@Override
@@ -507,7 +523,7 @@ public class Client extends JFrame {
 			public void stateChanged(ChangeEvent e) {
 				JSlider sliderTemp = (JSlider) e.getSource();
 				int volumeValue = sliderTemp.getValue();
-				
+
 				if (mediaPlayer.isPlayable()) {
 					mediaPlayer.setVolume(volumeValue);
 				}
@@ -567,7 +583,7 @@ public class Client extends JFrame {
 			writeStatus(new String("Couldn't open I/O connection " + specifiedHostName + ":" + specifiedPortNumber
 					+ ". Trying to reconnect soon..."), Color.RED);
 		}
-		if(!connectedToServer){
+		if (!connectedToServer) {
 			retryConnectionToServer();
 		}
 		return connectedToServer;
