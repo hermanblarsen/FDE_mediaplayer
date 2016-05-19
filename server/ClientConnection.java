@@ -26,16 +26,16 @@ public class ClientConnection implements Runnable {
 	private ObjectOutputStream outputToClient;
 	private ObjectInputStream inputFromClient;
 	private String streamingOptions;
-	private List<UserAccount> userList = new ArrayList<UserAccount>();
-	private List<VideoFile> videoList = new ArrayList<VideoFile>();
+	protected List<UserAccount> userList = new ArrayList<UserAccount>();
+	protected List<VideoFile> videoList = new ArrayList<VideoFile>();
 	
 
 	private MediaPlayerFactory mediaPlayerFactory;
-	private HeadlessMediaPlayer mediaPlayer;
+	protected HeadlessMediaPlayer mediaPlayer;
 	private String vlcLibraryDatapath = "external_archives/VLC/vlc-2.0.1";
 	private String xmlListDatapath = "serverRepository/videoList.xml";
 	private String videoRepositoryDatapath = "serverRepository/";
-	private String currentlyStreamingvideoID;
+	protected String currentlyStreamingvideoID;
 	protected String clientCommandString;
 
 	public ClientConnection(Socket clientSocket, int streamPort, String streamingOptions) {
