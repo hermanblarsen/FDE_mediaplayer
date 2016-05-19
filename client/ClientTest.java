@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.util.List;
 import javax.swing.JComboBox;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,7 +22,7 @@ import server.*;
 public class ClientTest {
 	private  Client	testClient;
 	private Server server;
-	//TODO IMPORTANT: When testing, streaming and mediaplayer must be commented out from server//client
+	private static Thread t;
 	
 	@Before 
 	public void setUp() throws Exception {
@@ -36,8 +37,8 @@ public class ClientTest {
 	@BeforeClass
 	public static void setUpServer(){
 		Server server = new Server();
-		Thread T = new Thread(server);
-		T.start();
+		t = new Thread(server);
+		t.start();
 	}
 
 	@Test

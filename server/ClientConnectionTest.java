@@ -53,9 +53,9 @@ public class ClientConnectionTest {
 		Thread connectionThread = new Thread(connection);
 		connectionThread.start();
 		//delay is needed for ClientConnection to receive and act on command
-		Thread.sleep(200);
+		Thread.sleep(500);
 		client.login("123","123");
-		Thread.sleep(200);
+		Thread.sleep(500);
 	}
 	
 	private String formatRtpStream(String serverAddress, int streamPort) {
@@ -132,16 +132,16 @@ public class ClientConnectionTest {
 		//starting stream
 		client.sendToServer("STREAM");
 		client.sendToServer("20120213a2");
-		Thread.sleep(300);
+		Thread.sleep(400);
 		assertTrue(connection.mediaPlayer.isPlaying());
 		float position = connection.mediaPlayer.getPosition();
 		//pausing stream
 		client.sendToServer("PAUSE");
-		Thread.sleep(200);
+		Thread.sleep(300);
 		assertFalse(connection.mediaPlayer.isPlaying());
 		//now test that the player resumes from the same position
 		client.sendToServer("PLAY");
-		Thread.sleep(200);
+		Thread.sleep(300);
 		assertTrue(connection.mediaPlayer.isPlaying());
 		assertTrue(connection.mediaPlayer.getPosition() >= position);
 	}
@@ -175,5 +175,7 @@ public class ClientConnectionTest {
 		float finalPercentage = connection.loggedInUser.getVideos().get(0).getPercentageWatched();
 		assertTrue(initialPercentage < finalPercentage);
 	}
+	
+	
 
 }
