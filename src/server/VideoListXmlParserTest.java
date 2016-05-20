@@ -8,11 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * 
- * 
- * 
- * 
- * 
+ * Checking that the Video list parser works to specifications
  */
 public class VideoListXmlParserTest {
 

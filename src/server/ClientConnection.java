@@ -17,11 +17,9 @@ import uk.co.caprica.vlcj.player.headless.HeadlessMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
 /**
- * 
- * 
- * 
- * 
- * 
+ * Class responsible for handeling all of the interaction with the client after the server class
+ * has established the initial connection. The Client Connection takes the passive role and does nothing 
+ * unless the client tells it to do something (e.g streaming or sending a list).
  */
 public class ClientConnection implements Runnable {
 
@@ -58,6 +56,12 @@ public class ClientConnection implements Runnable {
 		UserListXmlParser userXmlParser = new UserListXmlParser();
 		this.userList = userXmlParser.parseUserAccountList();
 		this.readVideoList();
+		/*
+		 * if a user is added to the user list the user wont have all 
+		 * the videos in his videoList, this could cause problems when the user then tries 
+		 * to rate or comment on that video. This updates the new users video list to
+		 * contain all video files that are in the videoList.
+		 */
 		for (VideoFile video : this.videoList) {
 			String videoID = video.getID();
 			for (UserAccount userAccount : userList) {
@@ -75,13 +79,14 @@ public class ClientConnection implements Runnable {
 				}
 			}
 		}
+		//save changes
 		userXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
-
 		this.userLogin();
 		this.respondToClientCommands();
 	}
 
 	private void userLogin() {
+		//set up the input and output streams
 		try {
 			this.outputToClient = new ObjectOutputStream(connectedClientSocket.getOutputStream());
 			this.inputFromClient = new ObjectInputStream(connectedClientSocket.getInputStream());
@@ -200,68 +205,10 @@ public class ClientConnection implements Runnable {
 				}
 				break;
 			case "COMMENT":
-				String commentedVideoId = (String) readFromObjectStream();
-				String comment = (String) readFromObjectStream();
-				readVideoList();
-				for (VideoFile video : videoList) {
-					if (video.getID().equals(commentedVideoId)) {
-						ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
-						// if no comments list exists, create one
-						if (commentsList == null) {
-							commentsList = new ArrayList<String>();
-						}
-						commentsList.add(comment);
-						video.setPublicCommentsList(commentsList);
-						break;
-					}
-				}
-				updateVideoListXML();
+				commentVideo();
 				break;
 			case "RATE":
-				// server now expects the videoID of the video that is being
-				// rated
-				String ratedVideoID = (String) readFromObjectStream();
-				// server then expects the rating the user has given
-				int rating = (int) readFromObjectStream();
-				// server now updates the UserAccount with the rating
-				ArrayList<VideoFile> modifiedUserVideoList = (ArrayList<VideoFile>) loggedInUser.getVideos();
-				for (Iterator iterator = videoList.iterator(); iterator.hasNext();) {
-					VideoFile serverVideo = (VideoFile) iterator.next();
-					// get the right video file from the video list
-					if (serverVideo.getID().equals(ratedVideoID)) {
-						// now check if the user allready has this video in his
-						// list
-						boolean userVideoListContainsVideo = false;
-						for (Iterator iterator2 = modifiedUserVideoList.iterator(); iterator2.hasNext();) {
-							VideoFile userVideo = (VideoFile) iterator2.next();
-							if (userVideo.getID().equals(ratedVideoID)) {
-								userVideoListContainsVideo = true;
-								break;
-							}
-						}
-						if (!userVideoListContainsVideo) {
-							modifiedUserVideoList.add(serverVideo);
-						}
-						break;
-					}
-				}
-				for (VideoFile userVideo : modifiedUserVideoList) {
-					if (userVideo.getID().equals(ratedVideoID)) {
-						userVideo.setUserRating(rating);
-					}
-				}
-				loggedInUser.setVideos(modifiedUserVideoList);
-				// refresh the user account in the user list
-				for (Iterator iterator = this.userList.iterator(); iterator.hasNext();) {
-					UserAccount account = (UserAccount) iterator.next();
-					if (account.getUserNameID().equals(loggedInUser.getUserNameID())) {
-						account = loggedInUser;
-					}
-				}
-				UserListXmlParser userListXmlParser = new UserListXmlParser();
-				userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
-				// update the overall video rating
-				updateVideoRating(ratedVideoID);
+				rateVideo();
 				break;
 			default:
 				break;
@@ -269,13 +216,82 @@ public class ClientConnection implements Runnable {
 		}
 	}
 
-	// update the percentage watched for the current video and user
-	private void updateUserWatchedPercentage(float newPercentage) {
+	private void commentVideo() {
+		String commentedVideoId = (String) readFromObjectStream();
+		String comment = (String) readFromObjectStream();
+		readVideoList();//update the video list (in case othe users have commented)
+		//obtain the desired video and add the comment
+		for (VideoFile video : videoList) {
+			if (video.getID().equals(commentedVideoId)) {
+				ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
+				// if no comments list exists, create one
+				if (commentsList == null) {
+					commentsList = new ArrayList<String>();
+				}
+				commentsList.add(comment);
+				video.setPublicCommentsList(commentsList);
+				break;
+			}
+		}
+		updateVideoListXML();
+	}
 
+	private void rateVideo() {
+		// server now expects the videoID of the video that is being rated
+		String ratedVideoID = (String) readFromObjectStream();
+		// server then expects the rating the user has given
+		int rating = (int) readFromObjectStream();
+		// server now updates the UserAccount with the rating
+		ArrayList<VideoFile> modifiedUserVideoList = (ArrayList<VideoFile>) loggedInUser.getVideos();
+		for (Iterator iterator = videoList.iterator(); iterator.hasNext();) {
+			VideoFile serverVideo = (VideoFile) iterator.next();
+			// get the right video file from the video list
+			if (serverVideo.getID().equals(ratedVideoID)) {
+				// now check if the user already has this video in his list
+				boolean userVideoListContainsVideo = false;
+				for (Iterator iterator2 = modifiedUserVideoList.iterator(); iterator2.hasNext();) {
+					VideoFile userVideo = (VideoFile) iterator2.next();
+					if (userVideo.getID().equals(ratedVideoID)) {
+						userVideoListContainsVideo = true;
+						break;
+					}
+				}
+				//if user does not have the video then add it so that the rating can be stored
+				if (!userVideoListContainsVideo) {
+					modifiedUserVideoList.add(serverVideo);
+				}
+				break;
+			}
+		}
+		//modify the rating on the video
+		for (VideoFile userVideo : modifiedUserVideoList) {
+			if (userVideo.getID().equals(ratedVideoID)) {
+				userVideo.setUserRating(rating);
+			}
+		}
+		loggedInUser.setVideos(modifiedUserVideoList);
+		// refresh the user account in the user list
+		for (Iterator iterator = this.userList.iterator(); iterator.hasNext();) {
+			UserAccount account = (UserAccount) iterator.next();
+			if (account.getUserNameID().equals(loggedInUser.getUserNameID())) {
+				account = loggedInUser;
+			}
+		}
+		//write updated userList to file
+		UserListXmlParser userListXmlParser = new UserListXmlParser();
+		userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
+		// update the overall video rating
+		updateVideoRating(ratedVideoID);
+	}
+
+	private void updateUserWatchedPercentage(float newPercentage) {
+		//get the user account from the account list
 		for (UserAccount user : userList) {
 			if (user.getUserNameID().equals(loggedInUser.getUserNameID())) {
+				//get the correct video from the users video list
 				for (VideoFile tempVideo : user.getVideos()) {
 					if (tempVideo.getID().equals(currentlyStreamingvideoID)) {
+						//update the percentage watched field in the video and write change to file
 						tempVideo.setPercentageWatched(newPercentage);
 						UserListXmlParser userListXmlParser = new UserListXmlParser();
 						userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
@@ -284,7 +300,6 @@ public class ClientConnection implements Runnable {
 				}
 			}
 		}
-
 	}
 
 	private void updateVideoListXML() {

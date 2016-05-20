@@ -19,11 +19,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * 
- * 
- * 
- * 
- * 
+ * Class used to read and write the userList from and to the UserListXML file.
+ * This enables us to store information like what rating the user gave the video
+ * and up to what point the user has watched the video. When the user then connects 
+ * the next time he/she can pick up where they left off
  */
 public class UserListXmlParser {
 
