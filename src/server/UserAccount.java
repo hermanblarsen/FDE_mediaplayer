@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * The UserAccount currently stores its own credentials (username/password) as
- * well as a userSpecific video list with details about how the user has
+ * well as a user specific video list with details about how the user has
  * interacted with the specific videos.
  */
 public class UserAccount implements Serializable {

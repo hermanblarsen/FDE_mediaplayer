@@ -17,9 +17,10 @@ import uk.co.caprica.vlcj.player.headless.HeadlessMediaPlayer;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
 /**
- * Class responsible for handeling all of the interaction with the client after the server class
- * has established the initial connection. The Client Connection takes the passive role and does nothing 
- * unless the client tells it to do something (e.g streaming or sending a list).
+ * Class responsible for handling all of the interaction with the client after
+ * the server class has established the initial connection. The Client
+ * Connection takes the passive role and does nothing unless the client tells it
+ * to do something (e.g streaming or sending a list).
  */
 public class ClientConnection implements Runnable {
 
@@ -56,12 +57,20 @@ public class ClientConnection implements Runnable {
 		UserListXmlParser userXmlParser = new UserListXmlParser();
 		this.userList = userXmlParser.parseUserAccountList();
 		this.readVideoList();
-		/*
-		 * if a user is added to the user list the user wont have all 
-		 * the videos in his videoList, this could cause problems when the user then tries 
-		 * to rate or comment on that video. This updates the new users video list to
-		 * contain all video files that are in the videoList.
-		 */
+		populateUserList();
+
+		userXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
+		this.userLogin();
+		this.respondToClientCommands();
+	}
+
+	/*
+	 * if a user is added to the user list the user wont have all the videos in
+	 * his videoList, this could cause problems when the user then tries to rate
+	 * or comment on that video. This updates the new users video list to
+	 * contain all video files that are in the videoList.
+	 */
+	private void populateUserList() {
 		for (VideoFile video : this.videoList) {
 			String videoID = video.getID();
 			for (UserAccount userAccount : userList) {
@@ -79,14 +88,11 @@ public class ClientConnection implements Runnable {
 				}
 			}
 		}
-		//save changes
-		userXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
-		this.userLogin();
-		this.respondToClientCommands();
+
 	}
 
 	private void userLogin() {
-		//set up the input and output streams
+		// set up the input and output streams
 		try {
 			this.outputToClient = new ObjectOutputStream(connectedClientSocket.getOutputStream());
 			this.inputFromClient = new ObjectInputStream(connectedClientSocket.getInputStream());
@@ -145,8 +151,9 @@ public class ClientConnection implements Runnable {
 				continue;
 			} else if (clientOutput instanceof String) {
 				clientCommandString = (String) clientOutput;
-				//Uncomment for manual testing of server side:
-				//System.out.println("Message recieved from client: " + clientCommandString); 
+				// Uncomment for manual testing of server side:
+				// System.out.println("Message recieved from client: " +
+				// clientCommandString);
 			}
 
 			switch (clientCommandString) {
@@ -219,8 +226,9 @@ public class ClientConnection implements Runnable {
 	private void commentVideo() {
 		String commentedVideoId = (String) readFromObjectStream();
 		String comment = (String) readFromObjectStream();
-		readVideoList();//update the video list (in case othe users have commented)
-		//obtain the desired video and add the comment
+		readVideoList();// update the video list (in case othe users have
+						// commented)
+		// obtain the desired video and add the comment
 		for (VideoFile video : videoList) {
 			if (video.getID().equals(commentedVideoId)) {
 				ArrayList<String> commentsList = (ArrayList<String>) video.getPublicCommentsList();
@@ -256,14 +264,15 @@ public class ClientConnection implements Runnable {
 						break;
 					}
 				}
-				//if user does not have the video then add it so that the rating can be stored
+				// if user does not have the video then add it so that the
+				// rating can be stored
 				if (!userVideoListContainsVideo) {
 					modifiedUserVideoList.add(serverVideo);
 				}
 				break;
 			}
 		}
-		//modify the rating on the video
+		// modify the rating on the video
 		for (VideoFile userVideo : modifiedUserVideoList) {
 			if (userVideo.getID().equals(ratedVideoID)) {
 				userVideo.setUserRating(rating);
@@ -277,7 +286,7 @@ public class ClientConnection implements Runnable {
 				account = loggedInUser;
 			}
 		}
-		//write updated userList to file
+		// write updated userList to file
 		UserListXmlParser userListXmlParser = new UserListXmlParser();
 		userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);
 		// update the overall video rating
@@ -285,13 +294,14 @@ public class ClientConnection implements Runnable {
 	}
 
 	private void updateUserWatchedPercentage(float newPercentage) {
-		//get the user account from the account list
+		// get the user account from the account list
 		for (UserAccount user : userList) {
 			if (user.getUserNameID().equals(loggedInUser.getUserNameID())) {
-				//get the correct video from the users video list
+				// get the correct video from the users video list
 				for (VideoFile tempVideo : user.getVideos()) {
 					if (tempVideo.getID().equals(currentlyStreamingvideoID)) {
-						//update the percentage watched field in the video and write change to file
+						// update the percentage watched field in the video and
+						// write change to file
 						tempVideo.setPercentageWatched(newPercentage);
 						UserListXmlParser userListXmlParser = new UserListXmlParser();
 						userListXmlParser.writeUserListToXML((ArrayList<UserAccount>) userList);

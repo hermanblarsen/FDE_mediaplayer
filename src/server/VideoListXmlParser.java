@@ -22,11 +22,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 /**
- * 
- * 
- * 
- * 
- * 
+ * The VideoListXmlParser reads and writes from/to the video list, storing
+ * comments, public rating, and more. 
  */
 public class VideoListXmlParser {
 
@@ -57,7 +54,8 @@ public class VideoListXmlParser {
 			Element videoElement = (Element) root.item(i);
 			video.setID(videoElement.getAttribute("id"));
 			NodeList subElements = videoElement.getChildNodes();
-			//depending on tag of child node assign the textContend to different field of the video
+			// depending on tag of child node assign the textContend to
+			// different field of the video
 			for (int j = 0; j < subElements.getLength(); j++) {
 				if (subElements.item(j).getNodeType() == Node.ELEMENT_NODE) {
 					Element subElement = (Element) subElements.item(j);
@@ -92,7 +90,7 @@ public class VideoListXmlParser {
 					}
 				}
 			}
-			//add parsed video file to list. repeat for all videos
+			// add parsed video file to list. repeat for all videos
 			videoList.add(video);
 		}
 		return videoList;
@@ -121,7 +119,8 @@ public class VideoListXmlParser {
 
 				// if there are comments available, write them into the xml
 				ArrayList<String> temporary_commentList = (ArrayList<String>) video.getPublicCommentsList();
-				//check if there is a comment list, and if it exists write it to file,
+				// check if there is a comment list, and if it exists write it
+				// to file,
 				if (temporary_commentList != null) {
 					Element comments = doc.createElement("comments");
 					for (String comment : temporary_commentList) {

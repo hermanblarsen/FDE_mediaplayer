@@ -8,7 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Testing the operation of the UserListXmlParser
+ * Testing the operation of the UserListXmlParser, including list contents, list
+ * parsing, and writing to the list.
  */
 public class UserListXmlParserTest {
 

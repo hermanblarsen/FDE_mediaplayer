@@ -7,11 +7,7 @@ import java.util.List;
  * The VideoFile contains information about the video such as ID, title,
  * filename and length(duration). Additionally it can hold user specific
  * details, such as isFavourite, percentage watched and user rating, or public
- * ratings and comments,
- * 
- * 
- * 
- * 
+ * ratings and comments.
  */
 public class VideoFile implements Serializable {
 
