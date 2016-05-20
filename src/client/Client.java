@@ -103,6 +103,11 @@ public class Client extends JFrame {
 	private Boolean showListGrid;
 	protected JButton streamSelectedVideoButton;
 	protected JButton streamSelectedVideoFromLastPositionButton;
+	private JButton commentButton;
+	private JPanel mouseEventPanelControlMenu;
+	private JToggleButton fullScreenToggleButton;
+	private JPanel mouseEventPanelAudioMenu;
+	private JSlider audioSlider;
 
 	/*
 	 * Internal class used to temporarily disable slider changeListeners when
@@ -154,41 +159,45 @@ public class Client extends JFrame {
 	public Client(boolean startInTestMode) {
 		this.isTestMode = startInTestMode;
 		setupGUI();
-		setupActionListeners();
+		setupListeners();
 
 		if (!startInTestMode) {
 			connectToTheServer();
 		}
 	}
 
-	private void setupActionListeners() {
-		// TODO Auto-generated method stub
-		
-	}
-
 	/**
-	 * Sets up the Client GUI. The GUI was built using the eclipse
-	 * windowbuilder extension
+	 * Sets up the Client GUI. The GUI was built using the eclipse windowbuilder
+	 * extension
 	 */
 	private void setupGUI() {
 		// Setup a JFrame and a JPanel contentsPane
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setTitle("SuperFlix");
-		this.setBounds(100, 100, 600, 400);
+		this.setBounds(200, 100, 600, 400);
+		this.setPreferredSize(new Dimension(800, 600));
 		this.contentPane = new JPanel();
 		this.contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		this.setContentPane(contentPane);
 		this.contentPane.setLayout(new BorderLayout(0, 0));
 
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		tabbedPane.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				if (tabbedPane.getSelectedIndex() != 2) {
-					pausePlayer();
-				}
-			}
-		});
+
+		// The status panel
+		statusPanel = new JPanel();
+		statusPanel.enableInputMethods(false);
+		contentPane.add(statusPanel, BorderLayout.SOUTH);
+		statusPanel.setLayout(new BorderLayout(0, 0));
+
+		JLabel statusBarLabel = new JLabel("Status:");
+		statusPanel.add(statusBarLabel, BorderLayout.WEST);
+		clientStatusBar = new JTextPane();
+		clientStatusBar.setToolTipText(
+				"Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
+		clientStatusBar.setEditable(false);
+		statusPanel.add(clientStatusBar, BorderLayout.CENTER);
+
+		// The video list tab:
 		listViewTab = new JPanel();
 		tabbedPane.addTab("Video List", null, listViewTab, "Browse videos to watch");
 		listViewTab.setLayout(new BorderLayout(0, 0));
@@ -198,8 +207,143 @@ public class Client extends JFrame {
 		listViewNorthPanel.setLayout(new BorderLayout(0, 0));
 
 		searchField = new JTextField();
+		searchField.setToolTipText("Search for your desired title/content here!");
 		listViewNorthPanel.add(searchField, BorderLayout.CENTER);
 		searchField.setColumns(10);
+
+		JPanel listViewWestPanel = new JPanel();
+		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
+		listViewWestPanel.setLayout(new GridLayout(15, 0, 0, 0));
+		contentPane.add(tabbedPane);
+
+		listScrollPanel = new JScrollPane();
+		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
+
+		commentButton = new JButton("Comment");
+		listViewWestPanel.add(commentButton);
+
+		streamSelectedVideoButton = new JButton("Stream");
+		listViewWestPanel.add(streamSelectedVideoButton);
+
+		streamSelectedVideoFromLastPositionButton = new JButton("Continue");
+		listViewWestPanel.add(streamSelectedVideoFromLastPositionButton);
+
+		// The settings tab:
+		settingsTab = new JPanel();
+		settingsTab.setToolTipText("");
+		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
+		tabbedPane.setEnabledAt(1, false);
+		settingsTab.setLayout(null);
+
+		JPanel loginCredentialsPanel = new JPanel();
+		loginCredentialsPanel.setBounds(225, 10, 250, 103);
+		settingsTab.add(loginCredentialsPanel);
+		loginCredentialsPanel.setLayout(null);
+
+		JLabel userNameLabel = new JLabel("Username: ");
+		userNameLabel.setBounds(10, 15, 66, 14);
+		loginCredentialsPanel.add(userNameLabel);
+		JLabel passwordLabel = new JLabel("Password: ");
+		passwordLabel.setBounds(10, 43, 64, 14);
+		loginCredentialsPanel.add(passwordLabel);
+
+		userNameField = new JTextField();
+		userNameField.setBounds(81, 12, 159, 20);
+		userNameField.setEnabled(false);
+		loginCredentialsPanel.add(userNameField);
+		userNameField.setColumns(10);
+
+		passwordField = new JPasswordField();
+		passwordField.setBounds(81, 40, 159, 20);
+		passwordField.setEnabled(false);
+		loginCredentialsPanel.add(passwordField);
+
+		loginButton = new JButton("Login");
+		loginButton.setBounds(81, 71, 159, 23);
+		loginButton.setEnabled(false);
+		loginCredentialsPanel.add(loginButton);
+
+		// The video player tab:
+		videoPlayerTab = new JPanel();
+		videoPlayerTab.setEnabled(false);
+		videoPlayerTab.setBackground(Color.BLACK);
+		tabbedPane.addTab("Video Player", null, videoPlayerTab, null);
+		videoPlayerTab.setLayout(new BorderLayout(0, 0));
+
+		// The control panel:
+		mouseEventPanelControlMenu = new JPanel();
+		mouseEventPanelControlMenu.setOpaque(false);
+		videoPlayerTab.add(mouseEventPanelControlMenu, BorderLayout.SOUTH);
+
+		subPanelControlMenu = new JPanel();
+		subPanelControlMenu.setVisible(false);
+		mouseEventPanelControlMenu.add(subPanelControlMenu);
+
+		playPauseButton = new JButton("Pause");
+		subPanelControlMenu.add(playPauseButton);
+
+		stopButton = new JButton("Stop");
+		subPanelControlMenu.add(stopButton);
+
+		fullScreenToggleButton = new JToggleButton("Fullscreen");
+		subPanelControlMenu.add(fullScreenToggleButton);
+
+		JLabel timePlayingLabel = new JLabel("Time Played");
+		subPanelControlMenu.add(timePlayingLabel);
+
+		positionTimeSlider = new JSlider(0, 100);
+		positionTimeSlider.setValue(0);
+
+		subPanelControlMenu.add(positionTimeSlider);
+		JLabel durationOfMovie = new JLabel("Total Duration");
+		subPanelControlMenu.add(durationOfMovie);
+
+		Component verticalPlaceholder = Box.createVerticalStrut(20);
+		mouseEventPanelControlMenu.add(verticalPlaceholder);
+
+		// The audio panel:
+		mouseEventPanelAudioMenu = new JPanel();
+		mouseEventPanelAudioMenu.setOpaque(false);
+		videoPlayerTab.add(mouseEventPanelAudioMenu, BorderLayout.EAST);
+
+		subPanelAudioMenu = new JPanel();
+		mouseEventPanelAudioMenu.add(subPanelAudioMenu);
+		subPanelAudioMenu.setOpaque(false);
+		subPanelAudioMenu.setVisible(false);
+
+		Component horizontalPlaceholder = Box.createHorizontalStrut(20);
+		mouseEventPanelAudioMenu.add(horizontalPlaceholder);
+
+		audioSlider = new JSlider(0, 100);
+		audioSlider.setValue(50);
+		audioSlider.setOrientation(SwingConstants.VERTICAL);
+
+		subPanelAudioMenu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		subPanelAudioMenu.add(audioSlider);
+
+		// Final startup settings for disabled tabs and start up tab
+		this.tabbedPane.setSelectedIndex(1);
+		this.tabbedPane.setEnabledAt(0, false);
+		this.tabbedPane.setEnabledAt(2, false);
+		this.pack();// makes sure everything is displayable.
+	}
+
+	private void setupListeners() {
+		loginButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				login();
+			}
+		});
+
+		tabbedPane.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				if (tabbedPane.getSelectedIndex() != 2) {
+					pausePlayer();
+				}
+			}
+		});
 
 		searchField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
@@ -227,44 +371,6 @@ public class Client extends JFrame {
 			}
 		});
 
-		JPanel listViewWestPanel = new JPanel();
-		listViewTab.add(listViewWestPanel, BorderLayout.WEST);
-		contentPane.add(tabbedPane);
-
-		listScrollPanel = new JScrollPane();
-		listViewTab.add(listScrollPanel, BorderLayout.CENTER);
-
-		JButton commentButton = new JButton("Comment");
-		commentButton.addActionListener(new ActionListener() {
-			private CommentWindow commentsWindow;
-
-			public void actionPerformed(ActionEvent arg0) {
-				boolean noVideoSelected = false;
-				String videoTitle = "";
-				try {
-					videoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
-				} catch (Exception e) {
-					writeStatus("Select a video before commenting", Color.YELLOW);
-					noVideoSelected = true;
-				}
-				if (!noVideoSelected) {
-					String videoID = "";
-					for (VideoFile eachVideo : videoList) {
-						if (videoTitle.equals(eachVideo.getTitle())) {
-							videoID = eachVideo.getID();
-						}
-					}
-					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":"
-							+ communicationPort), Color.GREEN);
-					commentsWindow = new CommentWindow(videoTitle, videoID, thisClient, currentUser);
-					commentsWindow.show();
-				}
-			}
-		});
-		listViewWestPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		streamSelectedVideoButton = new JButton("Stream");
-		listViewWestPanel.add(streamSelectedVideoButton);
 		streamSelectedVideoButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -287,9 +393,7 @@ public class Client extends JFrame {
 					sendSelectedVideo(selectedVideoTitle);
 					positionTimeSlider.setValue(0);
 					updateSliderPositionTask();
-
-					playPauseButton.setText("Pause");
-					playPlayer(); // TODO fix with stop and new video choice
+					playPlayer();
 
 					tabbedPane.setEnabledAt(2, true);
 					tabbedPane.setSelectedIndex(2);
@@ -299,8 +403,6 @@ public class Client extends JFrame {
 			}
 		});
 
-		streamSelectedVideoFromLastPositionButton = new JButton("Continue");
-		listViewWestPanel.add(streamSelectedVideoFromLastPositionButton);
 		streamSelectedVideoFromLastPositionButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -341,66 +443,66 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		listViewWestPanel.add(commentButton);
 
-		settingsTab = new JPanel();
-		settingsTab.setToolTipText("");
-		tabbedPane.addTab("Settings", null, settingsTab, "Access settings and your SuperFlix account");
-		this.tabbedPane.setEnabledAt(1, false);
-		settingsTab.setLayout(null);
+		commentButton.addActionListener(new ActionListener() {
+			private CommentWindow commentsWindow;
 
-		JPanel loginCredentialsPanel = new JPanel();
-		loginCredentialsPanel.setBounds(225, 10, 250, 103);
-		settingsTab.add(loginCredentialsPanel);
-		loginCredentialsPanel.setLayout(null);
+			public void actionPerformed(ActionEvent arg0) {
+				boolean noVideoSelected = false;
+				String videoTitle = "";
+				try {
+					videoTitle = (String) listTable.getValueAt(listTable.getSelectedRow(), 0);
+				} catch (Exception e) {
+					writeStatus("Select a video before commenting", Color.YELLOW);
+					noVideoSelected = true;
+				}
+				if (!noVideoSelected) {
+					String videoID = "";
+					for (VideoFile eachVideo : videoList) {
+						if (videoTitle.equals(eachVideo.getTitle())) {
+							videoID = eachVideo.getID();
+						}
+					}
+					writeStatus(new String(currentUser.getUserNameID() + " connected to server " + hostAddress + ":"
+							+ communicationPort), Color.GREEN);
+					commentsWindow = new CommentWindow(videoTitle, videoID, thisClient, currentUser);
+					commentsWindow.show();
+				}
+			}
+		});
 
-		JLabel userNameLabel = new JLabel("Username: ");
-		userNameLabel.setBounds(10, 15, 66, 14);
-		loginCredentialsPanel.add(userNameLabel);
-
-		userNameField = new JTextField();
-		userNameField.setBounds(81, 12, 159, 20);
-		userNameField.setEnabled(false);
-		loginCredentialsPanel.add(userNameField);
-		userNameField.setColumns(10);
-
-		JLabel lblPassword = new JLabel("Password: ");
-		lblPassword.setBounds(10, 43, 64, 14);
-		loginCredentialsPanel.add(lblPassword);
-
-		passwordField = new JPasswordField();
-		passwordField.setBounds(81, 40, 159, 20);
-		passwordField.setEnabled(false);
-		loginCredentialsPanel.add(passwordField);
-
-		loginButton = new JButton("Login");
-		loginButton.setBounds(81, 71, 159, 23);
-		loginButton.setEnabled(false);
-		loginCredentialsPanel.add(loginButton);
-		loginButton.addActionListener(new ActionListener() {
+		playPauseButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				login();
+				// depending on if the video is already playing the button
+				// function changes.
+				if (mediaPlayer.isPlaying()) {
+					pausePlayer();
+				} else {
+					playPlayer();
+				}
 			}
 		});
 
-		videoPlayerTab = new JPanel();
-		videoPlayerTab.setEnabled(false);
-		videoPlayerTab.setBackground(Color.BLACK);
-		tabbedPane.addTab("Video Player", null, videoPlayerTab, null);
-		videoPlayerTab.setLayout(new BorderLayout(0, 0));
-		videoPlayerTab.addMouseListener(new MouseAdapter() {
+		stopButton.addActionListener(new ActionListener() {
 			@Override
-			public void mouseEntered(MouseEvent e) {
-				subPanelControlMenu.setVisible(false);
-				subPanelControlMenu.repaint();
-				subPanelAudioMenu.setVisible(false);
-				subPanelAudioMenu.repaint();
+			public void actionPerformed(ActionEvent e) {
+				stopPlayer();
 			}
 		});
 
-		JPanel mouseEventPanelControlMenu = new JPanel();
-		mouseEventPanelControlMenu.setOpaque(false);
+		fullScreenToggleButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (thisClient.getExtendedState() == NORMAL) {
+					thisClient.setExtendedState(MAXIMIZED_BOTH);
+				} else {
+					thisClient.setExtendedState(NORMAL);
+				}
+			}
+		});
+
 		mouseEventPanelControlMenu.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseEntered(MouseEvent e) {
@@ -415,56 +517,21 @@ public class Client extends JFrame {
 				updateAutoHideConsoleTask();
 			}
 		});
-		videoPlayerTab.add(mouseEventPanelControlMenu, BorderLayout.SOUTH);
 
-		subPanelControlMenu = new JPanel();
-		subPanelControlMenu.setVisible(false);
-		mouseEventPanelControlMenu.add(subPanelControlMenu);
-		playPauseButton = new JButton("Pause");
-
-		playPauseButton.addActionListener(new ActionListener() {
+		mouseEventPanelAudioMenu.addMouseListener(new MouseAdapter() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				// depending on if the video is already playing the button
-				// function changes.
-				if (mediaPlayer.isPlaying()) {
-					pausePlayer();
-				} else {
-					playPlayer();
+			public void mouseEntered(MouseEvent e) {
+				subPanelAudioMenu.setVisible(true);
+				subPanelAudioMenu.repaint();
+
+				if (autoHideControlPanelsTask != null) {
+					autoHideControlPanelsTask.cancel();
+					updateTimer.purge();
 				}
-			}
-		});
-		subPanelControlMenu.add(playPauseButton);
-
-		stopButton = new JButton("Stop");
-		stopButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				stopPlayer();
-			}
-		});
-		subPanelControlMenu.add(stopButton);
-
-		JToggleButton fullscreenButton = new JToggleButton("Fullscreen");
-		fullscreenButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (thisClient.getExtendedState() == NORMAL) {
-					thisClient.setExtendedState(MAXIMIZED_BOTH);
-				} else {
-					thisClient.setExtendedState(NORMAL);
-				}
+				updateAutoHideConsoleTask();
 			}
 		});
 
-		subPanelControlMenu.add(fullscreenButton);
-
-		JLabel timePlayingLabel = new JLabel("Time Remaining");
-		subPanelControlMenu.add(timePlayingLabel);
-
-		positionTimeSlider = new JSlider(0, 100);
-		positionTimeSlider.setValue(0);
 		positionTimeSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -483,41 +550,6 @@ public class Client extends JFrame {
 			}
 		});
 
-		subPanelControlMenu.add(positionTimeSlider);
-		JLabel durationOfMovie = new JLabel("Time playing");
-		subPanelControlMenu.add(durationOfMovie);
-
-		Component verticalPlaceholder = Box.createVerticalStrut(20);
-		mouseEventPanelControlMenu.add(verticalPlaceholder);
-
-		JPanel mouseEventPanelAudioMenu = new JPanel();
-		mouseEventPanelAudioMenu.setOpaque(false);
-		videoPlayerTab.add(mouseEventPanelAudioMenu, BorderLayout.EAST);
-		mouseEventPanelAudioMenu.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				subPanelAudioMenu.setVisible(true);
-				subPanelAudioMenu.repaint();
-
-				if (autoHideControlPanelsTask != null) {
-					autoHideControlPanelsTask.cancel();
-					updateTimer.purge();
-				}
-				updateAutoHideConsoleTask();
-			}
-		});
-
-		Component horizontalPlaceholder = Box.createHorizontalStrut(20);
-		mouseEventPanelAudioMenu.add(horizontalPlaceholder);
-
-		subPanelAudioMenu = new JPanel();
-		mouseEventPanelAudioMenu.add(subPanelAudioMenu);
-		subPanelAudioMenu.setOpaque(false);
-		subPanelAudioMenu.setVisible(false);
-
-		JSlider audioSlider = new JSlider(0, 100);
-		audioSlider.setValue(50);
-		audioSlider.setOrientation(SwingConstants.VERTICAL);
 		audioSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -529,29 +561,6 @@ public class Client extends JFrame {
 				}
 			}
 		});
-		subPanelAudioMenu.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		subPanelAudioMenu.add(audioSlider);
-
-		statusPanel = new JPanel();
-		statusPanel.enableInputMethods(false);
-		contentPane.add(statusPanel, BorderLayout.SOUTH);
-		statusPanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel statusBarLabel = new JLabel("Status:");
-		statusPanel.add(statusBarLabel, BorderLayout.WEST);
-		clientStatusBar = new JTextPane();
-		clientStatusBar.setToolTipText(
-				"Messages about the working status of SuperFlix can be seen in this bar. Watch out for red!");
-		clientStatusBar.setEditable(false);
-		statusPanel.add(clientStatusBar, BorderLayout.CENTER);
-
-		this.setPreferredSize(new Dimension(800, 600));
-		this.tabbedPane.setSelectedIndex(1);
-
-		// disable the video list and video player tab until the user logs in
-		this.tabbedPane.setEnabledAt(0, false);
-		this.tabbedPane.setEnabledAt(2, false);
-		this.pack();// makes sure everything is displayable.
 	}
 
 	/**
@@ -740,6 +749,21 @@ public class Client extends JFrame {
 		return inputObjectFromStream;
 	}
 
+	protected void writeStatus(String statusMessage, Color statusColor) {
+		clientStatusBar.setText(statusMessage);
+		clientStatusBar.setBackground(statusColor);
+	}
+
+	private void sendSelectedVideo(String selectedVideoTitle) {
+		for (VideoFile aVideo : this.videoList) {
+			if (selectedVideoTitle.equals(aVideo.getTitle())) {
+				// Send the video ID of the videofile object with a mathcing
+				// title as the first column in selected row
+				sendToServer(aVideo.getID());
+			}
+		}
+	}
+
 	// check that the videos received are valid
 	public boolean validateVideoListContentsAndFormat() {
 		boolean listIsValid = true;
@@ -784,24 +808,48 @@ public class Client extends JFrame {
 		});
 	}
 
-	private void shutDownClient() {
-		// cancel all possible timer tasks
-		if (updateTimer != null) {
-			updateTimer.cancel();
+	private void pausePlayer() {
+		// check if the player is null
+		if (mediaPlayer != null) {
+			if (mediaPlayer.isPlaying()) {
+				sendToServer("PAUSE");
+				mediaPlayer.pause();
+				playPauseButton.setText("Play");
+			}
+			updateVideoListView();
 		}
-		mediaPlayerComponent.release();
-		mediaPlayer.release();
-		closeConnection();
+		if (updateSliderPositionTask != null) {
+			updateSliderPositionTask.cancel();
+		}
+
 	}
 
-	public void closeConnection() {
-		if (serverSocket != null && !serverSocket.isClosed()) {
-			sendToServer("CLOSECONNECTION");
-			try {
-				serverSocket.close();
-			} catch (Exception e) {
-				e.printStackTrace();
+	private void playPlayer() {
+		// check if the player is null
+		if (mediaPlayer != null) {
+			sendToServer("PLAY");
+			mediaPlayer.play();
+			updateSliderPositionTask();
+			playPauseButton.setText("Pause");
+			updateVideoListView();
+		}
+	}
+
+	private void stopPlayer() {
+		if (mediaPlayer != null) {
+			if (mediaPlayer.isPlayable()) {
+				sendToServer("STOP");
+				mediaPlayer.stop();
+				playPauseButton.setText("Play From Start");
+
+				for (VideoFile aVideo : currentUser.getVideos()) {
+					if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
+						aVideo.setPercentageWatched(0);
+					}
+				}
+				updateSliderPositionTask.cancel();
 			}
+			updateVideoListView();
 		}
 	}
 
@@ -872,62 +920,23 @@ public class Client extends JFrame {
 		updateTimer.schedule(autoHideControlPanelsTask, 4000);
 	}
 
-	protected void writeStatus(String statusMessage, Color statusColor) {
-		clientStatusBar.setText(statusMessage);
-		clientStatusBar.setBackground(statusColor);
+	private void shutDownClient() {
+		// cancel all possible timer tasks
+		if (updateTimer != null) {
+			updateTimer.cancel();
+		}
+		mediaPlayerComponent.release();
+		mediaPlayer.release();
+		closeConnection();
 	}
 
-	private void pausePlayer() {
-		// check if the player is null
-		if (mediaPlayer != null) {
-			if (mediaPlayer.isPlaying()) {
-				sendToServer("PAUSE");
-				mediaPlayer.pause();
-				playPauseButton.setText("Play");
-			}
-			updateVideoListView();
-		}
-		if (updateSliderPositionTask != null) {
-			updateSliderPositionTask.cancel();
-		}
-
-	}
-
-	private void playPlayer() {
-		// check if the player is null
-		if (mediaPlayer != null) {
-			sendToServer("PLAY");
-			mediaPlayer.play();
-			updateSliderPositionTask();
-			playPauseButton.setText("Pause");
-			updateVideoListView();
-		}
-	}
-
-	private void stopPlayer() {
-		if (mediaPlayer != null) {
-			if (mediaPlayer.isPlayable()) {
-				sendToServer("STOP");
-				mediaPlayer.stop();
-				playPauseButton.setText("Play From Start");
-
-				for (VideoFile aVideo : currentUser.getVideos()) {
-					if (currentlyStreamingVideo.getID().equals(aVideo.getID())) {
-						aVideo.setPercentageWatched(0);
-					}
-				}
-				updateSliderPositionTask.cancel();
-			}
-			updateVideoListView();
-		}
-	}
-
-	private void sendSelectedVideo(String selectedVideoTitle) {
-		for (VideoFile aVideo : this.videoList) {
-			if (selectedVideoTitle.equals(aVideo.getTitle())) {
-				// Send the video ID of the videofile object with a mathcing
-				// title as the first column in selected row
-				sendToServer(aVideo.getID());
+	public void closeConnection() {
+		if (serverSocket != null && !serverSocket.isClosed()) {
+			sendToServer("CLOSECONNECTION");
+			try {
+				serverSocket.close();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
